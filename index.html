@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema de Estacionamento</title>
+<style>
+  :root{
+    --bg:#f4faf6;
+    --panel:#ffffff;
+    --panel2:#eef8f1;
+    --accent:#4caf82;
+    --accent-dark:#2f8f63;
+    --accent-soft:#bfe8d4;
+    --baby:#dff3ea;
+    --text:#1f2d27;
+    --muted:#6b8478;
+    --border:#dcede3;
+    --danger:#e15b5b;
+    --danger-soft:#fbe4e4;
+    --sidebar-w:220px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:"Segoe UI",Arial,sans-serif; background:var(--bg); color:var(--text);
+  }
+
+  /* ---------- LAYOUT ---------- */
+  .app{display:flex; min-height:100vh;}
+
+  aside{
+    width:var(--sidebar-w); background:var(--panel); border-right:1px solid var(--border);
+    display:flex; flex-direction:column; position:fixed; top:0; left:0; bottom:0; z-index:10;
+  }
+  aside .logo{
+    padding:22px 20px; font-size:17px; font-weight:700; color:var(--accent-dark);
+    border-bottom:1px solid var(--border);
+  }
+  aside .logo small{display:block; font-size:11px; font-weight:400; color:var(--muted); margin-top:2px;}
+  nav.side-nav{flex:1; padding:14px 10px;}
+  nav.side-nav button{
+    display:block; width:100%; text-align:left; background:none; border:none; color:var(--muted);
+    padding:11px 14px; border-radius:8px; cursor:pointer; font-size:14px; margin-bottom:4px;
+  }
+  nav.side-nav button.active{background:var(--accent-soft); color:var(--accent-dark); font-weight:600;}
+  nav.side-nav button:hover:not(.active){background:var(--panel2);}
+  .side-status{
+    padding:14px 20px; border-top:1px solid var(--border); font-size:12px; color:var(--muted);
+  }
+  .dot{display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; background:var(--muted);}
+  .dot.on{background:var(--accent);}
+  .dot.off{background:var(--danger);}
+
+  main{margin-left:var(--sidebar-w); flex:1; padding:28px 32px; max-width:1200px;}
+
+  h1.page-title{font-size:20px; margin:0 0 4px 0; color:var(--text);}
+  p.page-sub{margin:0 0 20px 0; color:var(--muted); font-size:13px;}
+
+  .tab{display:none;}
+  .tab.active{display:block;}
+
+  .card{
+    background:var(--panel); border:1px solid var(--border); border-radius:12px;
+    padding:20px; margin-bottom:20px;
+  }
+  .card h2{margin-top:0; font-size:15px; color:var(--accent-dark); font-weight:600;}
+
+  .row{display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px;}
+  .row > div{flex:1; min-width:150px;}
+  label{display:block; font-size:12px; color:var(--muted); margin-bottom:5px;}
+  input, select{
+    width:100%; padding:9px 11px; border-radius:7px; border:1px solid var(--border);
+    background:#fafffc; color:var(--text); font-size:14px;
+  }
+  input:focus, select:focus{outline:none; border-color:var(--accent);}
+
+  button.btn{
+    background:var(--accent); color:#fff; border:none; padding:10px 18px; border-radius:7px;
+    cursor:pointer; font-weight:600; font-size:13px;
+  }
+  button.btn.secondary{background:var(--panel2); color:var(--accent-dark); border:1px solid var(--border);}
+  button.btn.danger{background:var(--danger-soft); color:var(--danger); border:1px solid #f3caca;}
+  button.btn:hover{opacity:.9;}
+
+  table{width:100%; border-collapse:collapse; margin-top:12px; font-size:13px;}
+  th, td{padding:9px 10px; border-bottom:1px solid var(--border); text-align:left;}
+  th{color:var(--muted); font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.03em;}
+  tr:hover td{background:var(--panel2);}
+  .actions{display:flex; gap:6px;}
+  .actions button{padding:6px 10px; font-size:12px;}
+
+  .badge{padding:3px 9px; border-radius:12px; font-size:11px; font-weight:600;}
+  .badge.livre{background:var(--accent-soft); color:var(--accent-dark);}
+  .badge.ocupada{background:var(--danger-soft); color:var(--danger);}
+
+  .toast{
+    position:fixed; bottom:22px; right:22px; padding:12px 18px; border-radius:9px;
+    background:var(--panel); border:1px solid var(--border); font-size:13px; color:var(--text);
+    box-shadow:0 6px 18px rgba(0,0,0,.08); display:none; max-width:340px; z-index:99;
+  }
+  .toast.error{border-color:#f3caca; background:var(--danger-soft); color:#a33333;}
+  .toast.success{border-color:var(--accent-soft); background:var(--baby); color:var(--accent-dark);}
+
+  .grid-stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px;}
+  .stat{background:var(--baby); border:1px solid var(--border); border-radius:10px; padding:16px; text-align:center;}
+  .stat .n{font-size:24px; font-weight:700; color:var(--accent-dark);}
+  .stat .l{font-size:12px; color:var(--muted); margin-top:4px;}
+  .empty{color:var(--muted); font-size:13px; padding:12px 0;}
+
+  /* ---------- MAPA DE VAGAS (estilo cinema) ---------- */
+  .setor-block{margin-bottom:26px;}
+  .setor-titulo{
+    font-size:13px; font-weight:700; color:var(--muted); text-transform:uppercase;
+    letter-spacing:.05em; margin-bottom:10px;
+  }
+  .mapa-tela{
+    text-align:center; color:var(--muted); font-size:11px; letter-spacing:.15em;
+    text-transform:uppercase; border-bottom:2px solid var(--accent-soft); padding-bottom:8px; margin-bottom:18px;
+  }
+  .vagas-grid{
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(56px, 1fr)); gap:10px;
+  }
+  .vaga-seat{
+    aspect-ratio:1/1; border-radius:8px 8px 4px 4px; border:1.5px solid var(--border);
+    display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600;
+    cursor:pointer; background:var(--panel2); color:var(--accent-dark); position:relative;
+    transition:transform .08s ease;
+  }
+  .vaga-seat:hover{transform:translateY(-2px);}
+  .vaga-seat.livre{background:var(--accent-soft); color:var(--accent-dark); border-color:var(--accent);}
+  .vaga-seat.ocupada{background:var(--danger-soft); color:#a33333; border-color:#f0b3b3; cursor:not-allowed;}
+  .vaga-seat.selecionada{background:var(--accent-dark); color:#fff; border-color:var(--accent-dark); transform:translateY(-2px);}
+  .legenda{display:flex; gap:18px; margin-top:16px; font-size:12px; color:var(--muted); flex-wrap:wrap;}
+  .legenda span{display:inline-flex; align-items:center; gap:6px;}
+  .legenda i{width:14px; height:14px; border-radius:4px; display:inline-block;}
+  .legenda i.livre{background:var(--accent-soft); border:1px solid var(--accent);}
+  .legenda i.ocupada{background:var(--danger-soft); border:1px solid #f0b3b3;}
+  .legenda i.selecionada{background:var(--accent-dark);}
+
+  @media (max-width: 860px){
+    aside{width:70px;}
+    aside .logo span.full{display:none;}
+    nav.side-nav button span.full{display:none;}
+    main{margin-left:70px; padding:20px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <aside>
+    <div class="logo">P <span class="full">Estacionamento</span><small class="full">Painel de controle</small></div>
+    <nav class="side-nav">
+      <button class="side-btn active" data-tab="patio"><span class="full">Mapa de Vagas</span></button>
+      <button class="side-btn" data-tab="clientes"><span class="full">Clientes</span></button>
+      <button class="side-btn" data-tab="veiculos"><span class="full">Veículos</span></button>
+      <button class="side-btn" data-tab="vagas"><span class="full">Vagas</span></button>
+      <button class="side-btn" data-tab="tarifas"><span class="full">Tarifas</span></button>
+      <button class="side-btn" data-tab="relatorios"><span class="full">Relatórios</span></button>
+    </nav>
+    <div class="side-status full"><span class="dot off" id="statusDot"></span><span id="statusApi">verificando...</span></div>
+  </aside>
+
+  <main>
+
+    <!-- MAPA DE VAGAS -->
+    <div class="tab active" id="tab-patio">
+      <h1 class="page-title">Mapa de Vagas</h1>
+      <p class="page-sub">Selecione uma vaga livre para registrar a entrada de um veículo.</p>
+
+      <div class="card">
+        <h2>Vagas do estacionamento</h2>
+        <div class="mapa-tela">Entrada principal</div>
+        <div id="mapaVagas"></div>
+        <div class="legenda">
+          <span><i class="livre"></i> Livre</span>
+          <span><i class="ocupada"></i> Ocupada</span>
+          <span><i class="selecionada"></i> Selecionada</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Registrar Entrada</h2>
+        <div class="row">
+          <div>
+            <label>Placa</label>
+            <input id="entradaPlaca" placeholder="ABC1D23">
+          </div>
+          <div>
+            <label>Vaga selecionada</label>
+            <input id="entradaVagaLabel" placeholder="Selecione no mapa acima" disabled>
+            <input type="hidden" id="entradaVaga">
+          </div>
+          <div>
+            <label>Tipo de cobrança</label>
+            <select id="entradaCobranca">
+              <option value="hora">Hora</option>
+              <option value="diaria">Diária</option>
+              <option value="mensal">Mensal</option>
+              <option value="anual">Anual</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn" onclick="registrarEntrada()">Registrar Entrada</button>
+      </div>
+
+      <div class="card">
+        <h2>Registrar Saída</h2>
+        <div class="row">
+          <div>
+            <label>Placa do veículo no pátio</label>
+            <input id="saidaPlaca" placeholder="ABC1D23">
+          </div>
+        </div>
+        <button class="btn danger" onclick="registrarSaida()">Registrar Saída</button>
+        <div id="saidaResultado" style="margin-top:14px;"></div>
+      </div>
+
+      <div class="card">
+        <h2>Veículos no pátio</h2>
+        <table id="tabelaPatio">
+          <thead><tr><th>Placa</th><th>Marca/Modelo</th><th>Vaga</th><th>Entrada</th><th>Cobrança</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- CLIENTES -->
+    <div class="tab" id="tab-clientes">
+      <h1 class="page-title">Clientes</h1>
+      <p class="page-sub">Cadastro de clientes do estacionamento.</p>
+      <div class="card">
+        <h2 id="clienteFormTitulo">Novo Cliente</h2>
+        <input type="hidden" id="clienteId">
+        <div class="row">
+          <div><label>Nome</label><input id="clienteNome"></div>
+          <div><label>CPF</label><input id="clienteCpf"></div>
+          <div><label>Telefone</label><input id="clienteTelefone"></div>
+          <div><label>Email</label><input id="clienteEmail"></div>
+        </div>
+        <button class="btn" onclick="salvarCliente()">Salvar</button>
+        <button class="btn secondary" onclick="limparFormCliente()">Cancelar</button>
+      </div>
+      <div class="card">
+        <h2>Clientes cadastrados</h2>
+        <div class="row"><div><input id="buscaCliente" placeholder="Buscar por nome ou CPF" oninput="carregarClientes()"></div></div>
+        <table>
+          <thead><tr><th>Nome</th><th>CPF</th><th>Telefone</th><th>Email</th><th></th></tr></thead>
+          <tbody id="tabelaClientes"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- VEÍCULOS -->
+    <div class="tab" id="tab-veiculos">
+      <h1 class="page-title">Veículos</h1>
+      <p class="page-sub">Cadastro de veículos vinculados aos clientes.</p>
+      <div class="card">
+        <h2 id="veiculoFormTitulo">Novo Veículo</h2>
+        <input type="hidden" id="veiculoId">
+        <div class="row">
+          <div><label>Placa</label><input id="veiculoPlaca"></div>
+          <div>
+            <label>Cliente</label>
+            <select id="veiculoCliente"><option value="">-- sem cliente --</option></select>
+          </div>
+          <div><label>Marca</label><input id="veiculoMarca"></div>
+          <div><label>Modelo</label><input id="veiculoModelo"></div>
+        </div>
+        <div class="row">
+          <div><label>Cor</label><input id="veiculoCor"></div>
+          <div>
+            <label>Tipo</label>
+            <select id="veiculoTipo">
+              <option value="carro">Carro</option>
+              <option value="moto">Moto</option>
+              <option value="eletrico">Elétrico</option>
+            </select>
+          </div>
+          <div>
+            <label>Tamanho</label>
+            <select id="veiculoTamanho">
+              <option value="pequeno">Pequeno</option>
+              <option value="medio" selected>Médio</option>
+              <option value="grande">Grande</option>
+            </select>
+          </div>
+          <div><label>Ano</label><input id="veiculoAno" type="number"></div>
+        </div>
+        <button class="btn" onclick="salvarVeiculo()">Salvar</button>
+        <button class="btn secondary" onclick="limparFormVeiculo()">Cancelar</button>
+      </div>
+      <div class="card">
+        <h2>Veículos cadastrados</h2>
+        <div class="row"><div><input id="buscaVeiculo" placeholder="Buscar por placa ou cliente" oninput="carregarVeiculos()"></div></div>
+        <table>
+          <thead><tr><th>Placa</th><th>Cliente</th><th>Marca/Modelo</th><th>Tipo</th><th></th></tr></thead>
+          <tbody id="tabelaVeiculos"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- VAGAS -->
+    <div class="tab" id="tab-vagas">
+      <h1 class="page-title">Vagas</h1>
+      <p class="page-sub">Cadastro e administração das vagas do estacionamento.</p>
+      <div class="card">
+        <h2 id="vagaFormTitulo">Nova Vaga</h2>
+        <input type="hidden" id="vagaId">
+        <div class="row">
+          <div><label>Número</label><input id="vagaNumero"></div>
+          <div>
+            <label>Tipo</label>
+            <select id="vagaTipo">
+              <option value="normal">Normal</option>
+              <option value="preferencial">Preferencial</option>
+              <option value="idoso">Idoso</option>
+              <option value="moto">Moto</option>
+              <option value="eletrico">Elétrico</option>
+            </select>
+          </div>
+          <div><label>Setor</label><input id="vagaSetor" placeholder="Ex: Setor A"></div>
+        </div>
+        <button class="btn" onclick="salvarVaga()">Salvar</button>
+        <button class="btn secondary" onclick="limparFormVaga()">Cancelar</button>
+      </div>
+      <div class="card">
+        <h2>Vagas cadastradas</h2>
+        <div class="row">
+          <div>
+            <label>Filtrar status</label>
+            <select id="filtroVagaStatus" onchange="carregarVagas()">
+              <option value="">Todas</option>
+              <option value="livre">Livre</option>
+              <option value="ocupada">Ocupada</option>
+            </select>
+          </div>
+          <div>
+            <label>Filtrar tipo</label>
+            <select id="filtroVagaTipo" onchange="carregarVagas()">
+              <option value="">Todos</option>
+              <option value="normal">Normal</option>
+              <option value="preferencial">Preferencial</option>
+              <option value="idoso">Idoso</option>
+              <option value="moto">Moto</option>
+              <option value="eletrico">Elétrico</option>
+            </select>
+          </div>
+        </div>
+        <table>
+          <thead><tr><th>Número</th><th>Tipo</th><th>Setor</th><th>Status</th><th></th></tr></thead>
+          <tbody id="tabelaVagas"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TARIFAS -->
+    <div class="tab" id="tab-tarifas">
+      <h1 class="page-title">Tarifas</h1>
+      <p class="page-sub">Valores de cobrança por tipo de veículo.</p>
+      <div class="card">
+        <h2 id="tarifaFormTitulo">Nova Tarifa</h2>
+        <input type="hidden" id="tarifaId">
+        <div class="row">
+          <div><label>Tipo de veículo</label><input id="tarifaTipoVeiculo" placeholder="carro / moto / eletrico"></div>
+          <div><label>Valor Hora (R$)</label><input id="tarifaHora" type="number" step="0.01"></div>
+          <div><label>Valor Diária (R$)</label><input id="tarifaDiaria" type="number" step="0.01"></div>
+          <div><label>Valor Mensal (R$)</label><input id="tarifaMensal" type="number" step="0.01"></div>
+          <div><label>Valor Anual (R$)</label><input id="tarifaAnual" type="number" step="0.01"></div>
+        </div>
+        <button class="btn" onclick="salvarTarifa()">Salvar</button>
+        <button class="btn secondary" onclick="limparFormTarifa()">Cancelar</button>
+      </div>
+      <div class="card">
+        <h2>Tarifas cadastradas</h2>
+        <table>
+          <thead><tr><th>Tipo veículo</th><th>Hora</th><th>Diária</th><th>Mensal</th><th>Anual</th><th></th></tr></thead>
+          <tbody id="tabelaTarifas"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- RELATÓRIOS -->
+    <div class="tab" id="tab-relatorios">
+      <h1 class="page-title">Relatórios</h1>
+      <p class="page-sub">Indicadores de ocupação, faturamento e histórico de clientes.</p>
+
+      <div class="card">
+        <h2>Ocupação</h2>
+        <button class="btn secondary" onclick="carregarOcupacao()">Atualizar</button>
+        <div class="grid-stats" id="statsOcupacao" style="margin-top:14px;"></div>
+        <table id="tabelaOcupacaoTipo" style="margin-top:16px;">
+          <thead><tr><th>Tipo</th><th>Total</th><th>Ocupadas</th><th>Livres</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>Faturamento</h2>
+        <div class="row">
+          <div><label>Data início</label><input type="date" id="fatInicio"></div>
+          <div><label>Data fim</label><input type="date" id="fatFim"></div>
+          <div style="display:flex; align-items:flex-end;"><button class="btn" onclick="carregarFaturamento()">Consultar</button></div>
+        </div>
+        <div class="grid-stats" id="statsFaturamento"></div>
+        <table id="tabelaFaturamentoTipo" style="margin-top:16px;">
+          <thead><tr><th>Tipo cobrança</th><th>Qtd</th><th>Total (R$)</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>Histórico por Cliente</h2>
+        <div class="row">
+          <div>
+            <label>Cliente</label>
+            <select id="historicoCliente"></select>
+          </div>
+          <div style="display:flex; align-items:flex-end;"><button class="btn" onclick="carregarHistoricoCliente()">Consultar</button></div>
+        </div>
+        <table>
+          <thead><tr><th>Placa</th><th>Marca/Modelo</th><th>Entrada</th><th>Saída</th><th>Valor</th><th>Status</th></tr></thead>
+          <tbody id="tabelaHistorico"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = "http://localhost:5000/api";
+let vagaSelecionada = null;
+
+function toast(msg, isError=false){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.className = "toast " + (isError ? "error" : "success");
+  t.style.display = "block";
+  setTimeout(()=> t.style.display = "none", 3500);
+}
+
+async function api(path, options={}){
+  try{
+    const res = await fetch(API + path, {
+      headers: {"Content-Type": "application/json"},
+      ...options
+    });
+    const data = await res.json().catch(()=> ({}));
+    if(!res.ok){
+      toast(data.erro || "Erro na requisição.", true);
+      return null;
+    }
+    return data;
+  }catch(e){
+    toast("Falha ao conectar com o servidor.", true);
+    document.getElementById("statusApi").textContent = "servidor indisponível";
+    document.getElementById("statusDot").className = "dot off";
+    return null;
+  }
+}
+
+// ---------- Navegação lateral ----------
+document.querySelectorAll(".side-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".side-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+    carregarAba(btn.dataset.tab);
+  });
+});
+
+function carregarAba(nome){
+  if(nome === "patio"){ carregarMapaVagas(); carregarPatio(); }
+  if(nome === "clientes"){ carregarClientes(); }
+  if(nome === "veiculos"){ carregarClientesSelect(); carregarVeiculos(); }
+  if(nome === "vagas"){ carregarVagas(); }
+  if(nome === "tarifas"){ carregarTarifas(); }
+  if(nome === "relatorios"){ carregarOcupacao(); carregarClientesHistoricoSelect(); }
+}
+
+// ---------- MAPA DE VAGAS (estilo cinema) ----------
+async function carregarMapaVagas(){
+  const vagas = await api("/vagas");
+  const container = document.getElementById("mapaVagas");
+  container.innerHTML = "";
+  if(!vagas || vagas.length === 0){
+    container.innerHTML = `<div class="empty">Nenhuma vaga cadastrada ainda.</div>`;
+    return;
+  }
+
+  // agrupar por setor
+  const setores = {};
+  vagas.forEach(v => {
+    const setor = v.setor && v.setor.trim() ? v.setor : "Sem setor";
+    if(!setores[setor]) setores[setor] = [];
+    setores[setor].push(v);
+  });
+
+  Object.keys(setores).sort().forEach(setor => {
+    const bloco = document.createElement("div");
+    bloco.className = "setor-block";
+    bloco.innerHTML = `<div class="setor-titulo">${setor}</div>`;
+    const grid = document.createElement("div");
+    grid.className = "vagas-grid";
+
+    setores[setor].forEach(v => {
+      const seat = document.createElement("div");
+      seat.className = "vaga-seat " + v.status;
+      seat.textContent = v.numero;
+      seat.title = `Vaga ${v.numero} - ${v.tipo} - ${v.status}`;
+      if(v.status === "livre"){
+        seat.addEventListener("click", () => selecionarVaga(v, seat));
+      }
+      grid.appendChild(seat);
+    });
+
+    bloco.appendChild(grid);
+    container.appendChild(bloco);
+  });
+}
+
+function selecionarVaga(v, el){
+  document.querySelectorAll(".vaga-seat.selecionada").forEach(s => s.classList.remove("selecionada"));
+  el.classList.add("selecionada");
+  vagaSelecionada = v;
+  document.getElementById("entradaVaga").value = v.id;
+  document.getElementById("entradaVagaLabel").value = `Vaga ${v.numero} (${v.tipo})`;
+}
+
+// ---------- PÁTIO ----------
+async function registrarEntrada(){
+  const placa = document.getElementById("entradaPlaca").value.trim();
+  const vaga_id = document.getElementById("entradaVaga").value;
+  const tipo_cobranca = document.getElementById("entradaCobranca").value;
+  if(!placa || !vaga_id){ toast("Informe a placa e selecione uma vaga no mapa.", true); return; }
+  const r = await api("/entrada", {method:"POST", body: JSON.stringify({placa, vaga_id, tipo_cobranca})});
+  if(r){
+    toast(r.mensagem || "Entrada registrada.");
+    document.getElementById("entradaPlaca").value = "";
+    document.getElementById("entradaVaga").value = "";
+    document.getElementById("entradaVagaLabel").value = "";
+    vagaSelecionada = null;
+    carregarMapaVagas();
+    carregarPatio();
+  }
+}
+
+async function registrarSaida(){
+  const placa = document.getElementById("saidaPlaca").value.trim();
+  if(!placa){ toast("Informe a placa.", true); return; }
+  const r = await api("/saida", {method:"POST", body: JSON.stringify({placa})});
+  const div = document.getElementById("saidaResultado");
+  if(r){
+    div.innerHTML = `
+      <div class="card" style="background:var(--baby); margin:0;">
+        <strong>Placa:</strong> ${r.placa}<br>
+        <strong>Entrada:</strong> ${r.data_entrada}<br>
+        <strong>Saída:</strong> ${r.data_saida}<br>
+        <strong>Permanência:</strong> ${r.permanencia_minutos} min<br>
+        <strong>Valor total:</strong> R$ ${Number(r.valor_total).toFixed(2)}
+      </div>`;
+    toast("Saída registrada.");
+    document.getElementById("saidaPlaca").value = "";
+    carregarMapaVagas();
+    carregarPatio();
+  } else {
+    div.innerHTML = "";
+  }
+}
+
+async function carregarPatio(){
+  const rows = await api("/relatorios/patio");
+  const tbody = document.querySelector("#tabelaPatio tbody");
+  tbody.innerHTML = "";
+  if(!rows || rows.length === 0){
+    tbody.innerHTML = `<tr><td colspan="5" class="empty">Nenhum veículo no pátio.</td></tr>`;
+    return;
+  }
+  rows.forEach(r => {
+    tbody.innerHTML += `<tr>
+      <td>${r.placa}</td>
+      <td>${r.marca || ""} ${r.modelo || ""}</td>
+      <td>${r.vaga_numero}</td>
+      <td>${r.data_entrada}</td>
+      <td>${r.tipo_cobranca}</td>
+    </tr>`;
+  });
+}
+
+// ---------- CLIENTES ----------
+async function carregarClientes(){
+  const termo = document.getElementById("buscaCliente").value;
+  const rows = await api("/clientes?q=" + encodeURIComponent(termo));
+  const tbody = document.getElementById("tabelaClientes");
+  tbody.innerHTML = "";
+  if(!rows || rows.length === 0){
+    tbody.innerHTML = `<tr><td colspan="5" class="empty">Nenhum cliente encontrado.</td></tr>`;
+    return;
+  }
+  rows.forEach(c => {
+    tbody.innerHTML += `<tr>
+      <td>${c.nome}</td><td>${c.cpf}</td><td>${c.telefone||""}</td><td>${c.email||""}</td>
+      <td class="actions">
+        <button class="btn secondary" onclick='editarCliente(${JSON.stringify(c)})'>Editar</button>
+        <button class="btn danger" onclick="excluirCliente(${c.id})">Excluir</button>
+      </td>
+    </tr>`;
+  });
+}
+
+function editarCliente(c){
+  document.getElementById("clienteId").value = c.id;
+  document.getElementById("clienteNome").value = c.nome;
+  document.getElementById("clienteCpf").value = c.cpf;
+  document.getElementById("clienteTelefone").value = c.telefone || "";
+  document.getElementById("clienteEmail").value = c.email || "";
+  document.getElementById("clienteFormTitulo").textContent = "Editar Cliente";
+}
+
+function limparFormCliente(){
+  document.getElementById("clienteId").value = "";
+  document.getElementById("clienteNome").value = "";
+  document.getElementById("clienteCpf").value = "";
+  document.getElementById("clienteTelefone").value = "";
+  document.getElementById("clienteEmail").value = "";
+  document.getElementById("clienteFormTitulo").textContent = "Novo Cliente";
+}
+
+async function salvarCliente(){
+  const id = document.getElementById("clienteId").value;
+  const payload = {
+    nome: document.getElementById("clienteNome").value.trim(),
+    cpf: document.getElementById("clienteCpf").value.trim(),
+    telefone: document.getElementById("clienteTelefone").value.trim(),
+    email: document.getElementById("clienteEmail").value.trim(),
+  };
+  const r = id
+    ? await api(`/clientes/${id}`, {method:"PUT", body: JSON.stringify(payload)})
+    : await api("/clientes", {method:"POST", body: JSON.stringify(payload)});
+  if(r){
+    toast("Cliente salvo.");
+    limparFormCliente();
+    carregarClientes();
+  }
+}
+
+async function excluirCliente(id){
+  if(!confirm("Excluir este cliente?")) return;
+  const r = await api(`/clientes/${id}`, {method:"DELETE"});
+  if(r){ toast("Cliente excluído."); carregarClientes(); }
+}
+
+// ---------- VEÍCULOS ----------
+async function carregarClientesSelect(){
+  const rows = await api("/clientes");
+  const sel = document.getElementById("veiculoCliente");
+  sel.innerHTML = '<option value="">-- sem cliente --</option>';
+  (rows || []).forEach(c => {
+    const opt = document.createElement("option");
+    opt.value = c.id;
+    opt.textContent = c.nome;
+    sel.appendChild(opt);
+  });
+}
+
+async function carregarVeiculos(){
+  const termo = document.getElementById("buscaVeiculo").value;
+  const rows = await api("/veiculos?q=" + encodeURIComponent(termo));
+  const tbody = document.getElementById("tabelaVeiculos");
+  tbody.innerHTML = "";
+  if(!rows || rows.length === 0){
+    tbody.innerHTML = `<tr><td colspan="5" class="empty">Nenhum veículo encontrado.</td></tr>`;
+    return;
+  }
+  rows.forEach(v => {
+    tbody.innerHTML += `<tr>
+      <td>${v.placa}</td><td>${v.cliente_nome || "-"}</td><td>${v.marca||""} ${v.modelo||""}</td><td>${v.tipo}</td>
+      <td class="actions">
+        <button class="btn secondary" onclick='editarVeiculo(${JSON.stringify(v)})'>Editar</button>
+        <button class="btn danger" onclick="excluirVeiculo(${v.id})">Excluir</button>
+      </td>
+    </tr>`;
+  });
+}
+
+function editarVeiculo(v){
+  document.getElementById("veiculoId").value = v.id;
+  document.getElementById("veiculoPlaca").value = v.placa;
+  document.getElementById("veiculoCliente").value = v.cliente_id || "";
+  document.getElementById("veiculoMarca").value = v.marca || "";
+  document.getElementById("veiculoModelo").value = v.modelo || "";
+  document.getElementById("veiculoCor").value = v.cor || "";
+  document.getElementById("veiculoTipo").value = v.tipo || "carro";
+  document.getElementById("veiculoTamanho").value = v.tamanho || "medio";
+  document.getElementById("veiculoAno").value = v.ano || "";
+  document.getElementById("veiculoFormTitulo").textContent = "Editar Veículo";
+}
+
+function limparFormVeiculo(){
+  ["veiculoId","veiculoPlaca","veiculoMarca","veiculoModelo","veiculoCor","veiculoAno"].forEach(id => document.getElementById(id).value = "");
+  document.getElementById("veiculoCliente").value = "";
+  document.getElementById("veiculoTipo").value = "carro";
+  document.getElementById("veiculoTamanho").value = "medio";
+  document.getElementById("veiculoFormTitulo").textContent = "Novo Veículo";
+}
+
+async function salvarVeiculo(){
+  const id = document.getElementById("veiculoId").value;
+  const payload = {
+    placa: document.getElementById("veiculoPlaca").value.trim(),
+    cliente_id: document.getElementById("veiculoCliente").value || null,
+    marca: document.getElementById("veiculoMarca").value.trim(),
+    modelo: document.getElementById("veiculoModelo").value.trim(),
+    cor: document.getElementById("veiculoCor").value.trim(),
+    tipo: document.getElementById("veiculoTipo").value,
+    tamanho: document.getElementById("veiculoTamanho").value,
+    ano: document.getElementById("veiculoAno").value || null,
+  };
+  const r = id
+    ? await api(`/veiculos/${id}`, {method:"PUT", body: JSON.stringify(payload)})
+    : await api("/veiculos", {method:"POST", body: JSON.stringify(payload)});
+  if(r){ toast("Veículo salvo."); limparFormVeiculo(); carregarVeiculos(); }
+}
+
+async function excluirVeiculo(id){
+  if(!confirm("Excluir este veículo?")) return;
+  const r = await api(`/veiculos/${id}`, {method:"DELETE"});
+  if(r){ toast("Veículo excluído."); carregarVeiculos(); }
+}
+
+// ---------- VAGAS ----------
+async function carregarVagas(){
+  const status = document.getElementById("filtroVagaStatus").value;
+  const tipo = document.getElementById("filtroVagaTipo").value;
+  const params = new URLSearchParams();
+  if(status) params.set("status", status);
+  if(tipo) params.set("tipo", tipo);
+  const rows = await api("/vagas?" + params.toString());
+  const tbody = document.getElementById("tabelaVagas");
+  tbody.innerHTML = "";
+  if(!rows || rows.length === 0){
+    tbody.innerHTML = `<tr><td colspan="5" class="empty">Nenhuma vaga encontrada.</td></tr>`;
+    return;
+  }
+  rows.forEach(v => {
+    tbody.innerHTML += `<tr>
+      <td>${v.numero}</td><td>${v.tipo}</td><td>${v.setor||""}</td>
+      <td><span class="badge ${v.status}">${v.status}</span></td>
+      <td class="actions">
+        <button class="btn secondary" onclick='editarVaga(${JSON.stringify(v)})'>Editar</button>
+        <button class="btn danger" onclick="excluirVaga(${v.id})">Excluir</button>
+      </td>
+    </tr>`;
+  });
+}
+
+function editarVaga(v){
+  document.getElementById("vagaId").value = v.id;
+  document.getElementById("vagaNumero").value = v.numero;
+  document.getElementById("vagaTipo").value = v.tipo;
+  document.getElementById("vagaSetor").value = v.setor || "";
+  document.getElementById("vagaFormTitulo").textContent = "Editar Vaga";
+}
+
+function limparFormVaga(){
+  document.getElementById("vagaId").value = "";
+  document.getElementById("vagaNumero").value = "";
+  document.getElementById("vagaSetor").value = "";
+  document.getElementById("vagaTipo").value = "normal";
+  document.getElementById("vagaFormTitulo").textContent = "Nova Vaga";
+}
+
+async function salvarVaga(){
+  const id = document.getElementById("vagaId").value;
+  const payload = {
+    numero: document.getElementById("vagaNumero").value.trim(),
+    tipo: document.getElementById("vagaTipo").value,
+    setor: document.getElementById("vagaSetor").value.trim(),
+  };
+  const r = id
+    ? await api(`/vagas/${id}`, {method:"PUT", body: JSON.stringify(payload)})
+    : await api("/vagas", {method:"POST", body: JSON.stringify(payload)});
+  if(r){ toast("Vaga salva."); limparFormVaga(); carregarVagas(); }
+}
+
+async function excluirVaga(id){
+  if(!confirm("Excluir esta vaga?")) return;
+  const r = await api(`/vagas/${id}`, {method:"DELETE"});
+  if(r){ toast("Vaga excluída."); carregarVagas(); }
+}
+
+// ---------- TARIFAS ----------
+async function carregarTarifas(){
+  const rows = await api("/tarifas");
+  const tbody = document.getElementById("tabelaTarifas");
+  tbody.innerHTML = "";
+  if(!rows || rows.length === 0){
+    tbody.innerHTML = `<tr><td colspan="6" class="empty">Nenhuma tarifa cadastrada.</td></tr>`;
+    return;
+  }
+  rows.forEach(t => {
+    tbody.innerHTML += `<tr>
+      <td>${t.tipo_veiculo}</td>
+      <td>R$ ${Number(t.valor_hora).toFixed(2)}</td>
+      <td>R$ ${Number(t.valor_diaria).toFixed(2)}</td>
+      <td>R$ ${Number(t.valor_mensal).toFixed(2)}</td>
+      <td>R$ ${Number(t.valor_anual).toFixed(2)}</td>
+      <td class="actions">
+        <button class="btn secondary" onclick='editarTarifa(${JSON.stringify(t)})'>Editar</button>
+        <button class="btn danger" onclick="excluirTarifa(${t.id})">Excluir</button>
+      </td>
+    </tr>`;
+  });
+}
+
+function editarTarifa(t){
+  document.getElementById("tarifaId").value = t.id;
+  document.getElementById("tarifaTipoVeiculo").value = t.tipo_veiculo;
+  document.getElementById("tarifaHora").value = t.valor_hora;
+  document.getElementById("tarifaDiaria").value = t.valor_diaria;
+  document.getElementById("tarifaMensal").value = t.valor_mensal;
+  document.getElementById("tarifaAnual").value = t.valor_anual;
+  document.getElementById("tarifaFormTitulo").textContent = "Editar Tarifa";
+}
+
+function limparFormTarifa(){
+  ["tarifaId","tarifaTipoVeiculo","tarifaHora","tarifaDiaria","tarifaMensal","tarifaAnual"].forEach(id => document.getElementById(id).value = "");
+  document.getElementById("tarifaFormTitulo").textContent = "Nova Tarifa";
+}
+
+async function salvarTarifa(){
+  const id = document.getElementById("tarifaId").value;
+  const payload = {
+    tipo_veiculo: document.getElementById("tarifaTipoVeiculo").value.trim(),
+    valor_hora: document.getElementById("tarifaHora").value || 0,
+    valor_diaria: document.getElementById("tarifaDiaria").value || 0,
+    valor_mensal: document.getElementById("tarifaMensal").value || 0,
+    valor_anual: document.getElementById("tarifaAnual").value || 0,
+  };
+  const r = id
+    ? await api(`/tarifas/${id}`, {method:"PUT", body: JSON.stringify(payload)})
+    : await api("/tarifas", {method:"POST", body: JSON.stringify(payload)});
+  if(r){ toast("Tarifa salva."); limparFormTarifa(); carregarTarifas(); }
+}
+
+async function excluirTarifa(id){
+  if(!confirm("Excluir esta tarifa?")) return;
+  const r = await api(`/tarifas/${id}`, {method:"DELETE"});
+  if(r){ toast("Tarifa excluída."); carregarTarifas(); }
+}
+
+// ---------- RELATÓRIOS ----------
+async function carregarOcupacao(){
+  const r = await api("/relatorios/ocupacao");
+  if(!r) return;
+  document.getElementById("statsOcupacao").innerHTML = `
+    <div class="stat"><div class="n">${r.total_vagas}</div><div class="l">Total de vagas</div></div>
+    <div class="stat"><div class="n">${r.ocupadas}</div><div class="l">Ocupadas</div></div>
+    <div class="stat"><div class="n">${r.livres}</div><div class="l">Livres</div></div>
+    <div class="stat"><div class="n">${r.taxa_ocupacao}%</div><div class="l">Taxa de ocupação</div></div>
+  `;
+  const tbody = document.querySelector("#tabelaOcupacaoTipo tbody");
+  tbody.innerHTML = "";
+  (r.por_tipo || []).forEach(t => {
+    tbody.innerHTML += `<tr><td>${t.tipo}</td><td>${t.total}</td><td>${t.ocupadas}</td><td>${t.livres}</td></tr>`;
+  });
+}
+
+async function carregarFaturamento(){
+  const inicio = document.getElementById("fatInicio").value;
+  const fim = document.getElementById("fatFim").value;
+  const params = new URLSearchParams();
+  if(inicio) params.set("data_inicio", inicio);
+  if(fim) params.set("data_fim", fim);
+  const r = await api("/relatorios/faturamento?" + params.toString());
+  if(!r) return;
+  document.getElementById("statsFaturamento").innerHTML = `
+    <div class="stat"><div class="n">${r.quantidade_registros}</div><div class="l">Registros</div></div>
+    <div class="stat"><div class="n">R$ ${Number(r.faturamento_total).toFixed(2)}</div><div class="l">Faturamento total</div></div>
+  `;
+  const tbody = document.querySelector("#tabelaFaturamentoTipo tbody");
+  tbody.innerHTML = "";
+  (r.por_tipo_cobranca || []).forEach(t => {
+    tbody.innerHTML += `<tr><td>${t.tipo_cobranca}</td><td>${t.qtd}</td><td>R$ ${Number(t.total||0).toFixed(2)}</td></tr>`;
+  });
+}
+
+async function carregarClientesHistoricoSelect(){
+  const rows = await api("/clientes");
+  const sel = document.getElementById("historicoCliente");
+  sel.innerHTML = "";
+  (rows || []).forEach(c => {
+    const opt = document.createElement("option");
+    opt.value = c.id;
+    opt.textContent = c.nome;
+    sel.appendChild(opt);
+  });
+}
+
+async function carregarHistoricoCliente(){
+  const id = document.getElementById("historicoCliente").value;
+  if(!id) return;
+  const rows = await api(`/relatorios/historico-cliente/${id}`);
+  const tbody = document.getElementById("tabelaHistorico");
+  tbody.innerHTML = "";
+  if(!rows || rows.length === 0){
+    tbody.innerHTML = `<tr><td colspan="6" class="empty">Nenhum registro encontrado.</td></tr>`;
+    return;
+  }
+  rows.forEach(m => {
+    tbody.innerHTML += `<tr>
+      <td>${m.placa}</td>
+      <td>${m.marca||""} ${m.modelo||""}</td>
+      <td>${m.data_entrada||""}</td>
+      <td>${m.data_saida||"-"}</td>
+      <td>${m.valor_total ? "R$ " + Number(m.valor_total).toFixed(2) : "-"}</td>
+      <td>${m.status}</td>
+    </tr>`;
+  });
+}
+
+// ---------- Inicialização ----------
+async function verificarConexao(){
+  const r = await api("/relatorios/ocupacao");
+  document.getElementById("statusApi").textContent = r ? "conectado à API" : "servidor indisponível";
+  document.getElementById("statusDot").className = "dot " + (r ? "on" : "off");
+}
+
+verificarConexao();
+carregarAba("patio");
+</script>
+
+</body>
+</html>
