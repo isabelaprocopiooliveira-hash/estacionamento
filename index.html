@@ -4,25 +4,38 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sistema de Estacionamento</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#f4faf6;
-    --panel:#ffffff;
-    --panel2:#eef8f1;
-    --accent:#4caf82;
-    --accent-dark:#2f8f63;
-    --accent-soft:#bfe8d4;
-    --baby:#dff3ea;
-    --text:#1f2d27;
-    --muted:#6b8478;
-    --border:#dcede3;
-    --danger:#e15b5b;
-    --danger-soft:#fbe4e4;
-    --sidebar-w:220px;
+    /* ---- Paleta: asfalto + sinalização de garagem ---- */
+    --bg:#12151a;
+    --panel:#1b1f26;
+    --panel2:#232830;
+    --panel3:#2b313b;
+    --accent:#f5b400;          /* amarelo de sinalização / cancela */
+    --accent-dark:#c99000;
+    --accent-soft:rgba(245,180,0,.16);
+    --text:#edf0f3;
+    --muted:#8891a0;
+    --border:#2a2f38;
+    --danger:#ff5b60;          /* vermelho "ocupada" */
+    --danger-soft:rgba(255,91,96,.14);
+    --livre:#2ed378;           /* verde "vaga livre" tipo LED de garagem */
+    --livre-soft:rgba(46,211,120,.14);
+    --sidebar-w:226px;
+    --font-display:'Oswald', sans-serif;
+    --font-body:'Inter', system-ui, sans-serif;
+    --font-mono:'JetBrains Mono', monospace;
   }
   *{box-sizing:border-box;}
   body{
-    margin:0; font-family:"Segoe UI",Arial,sans-serif; background:var(--bg); color:var(--text);
+    margin:0; font-family:var(--font-body); background:var(--bg); color:var(--text);
+    background-image:
+      radial-gradient(circle at 10% 0%, rgba(245,180,0,.05), transparent 45%),
+      radial-gradient(circle at 90% 100%, rgba(46,211,120,.04), transparent 40%);
+    background-attachment:fixed;
   }
 
   /* ---------- LAYOUT ---------- */
@@ -33,115 +46,148 @@
     display:flex; flex-direction:column; position:fixed; top:0; left:0; bottom:0; z-index:10;
   }
   aside .logo{
-    padding:22px 20px; font-size:17px; font-weight:700; color:var(--accent-dark);
+    padding:20px 18px; display:flex; align-items:center; gap:12px;
     border-bottom:1px solid var(--border);
   }
-  aside .logo small{display:block; font-size:11px; font-weight:400; color:var(--muted); margin-top:2px;}
-  nav.side-nav{flex:1; padding:14px 10px;}
+  aside .logo .badge-p{
+    width:36px; height:36px; min-width:36px; border-radius:8px;
+    background:var(--accent); color:#181a1e; font-family:var(--font-display);
+    font-weight:700; font-size:19px; display:flex; align-items:center; justify-content:center;
+    box-shadow:0 0 0 3px rgba(245,180,0,.15);
+  }
+  aside .logo .logo-text{font-family:var(--font-display); font-size:15px; font-weight:600; letter-spacing:.03em; color:var(--text); line-height:1.2;}
+  aside .logo small{display:block; font-size:10.5px; font-weight:400; color:var(--muted); margin-top:2px; letter-spacing:.04em; text-transform:uppercase; font-family:var(--font-body);}
+
+  nav.side-nav{flex:1; padding:16px 10px;}
   nav.side-nav button{
-    display:block; width:100%; text-align:left; background:none; border:none; color:var(--muted);
-    padding:11px 14px; border-radius:8px; cursor:pointer; font-size:14px; margin-bottom:4px;
+    display:block; width:100%; text-align:left; background:none; border:none; border-left:3px solid transparent;
+    color:var(--muted); padding:11px 13px; cursor:pointer; font-size:13.5px; margin-bottom:2px;
+    font-family:var(--font-body); font-weight:500; letter-spacing:.01em;
   }
-  nav.side-nav button.active{background:var(--accent-soft); color:var(--accent-dark); font-weight:600;}
-  nav.side-nav button:hover:not(.active){background:var(--panel2);}
+  nav.side-nav button.active{background:var(--panel2); color:var(--accent); font-weight:600; border-left-color:var(--accent);}
+  nav.side-nav button:hover:not(.active){background:var(--panel2); color:var(--text);}
+
   .side-status{
-    padding:14px 20px; border-top:1px solid var(--border); font-size:12px; color:var(--muted);
+    padding:14px 20px; border-top:1px solid var(--border); font-size:11.5px; color:var(--muted);
+    font-family:var(--font-mono);
   }
-  .dot{display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; background:var(--muted);}
-  .dot.on{background:var(--accent);}
-  .dot.off{background:var(--danger);}
+  .dot{display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:7px; background:var(--muted);}
+  .dot.on{background:var(--livre); box-shadow:0 0 0 3px var(--livre-soft);}
+  .dot.off{background:var(--danger); box-shadow:0 0 0 3px var(--danger-soft);}
 
-  main{margin-left:var(--sidebar-w); flex:1; padding:28px 32px; max-width:1200px;}
+  main{margin-left:var(--sidebar-w); flex:1; padding:30px 34px; max-width:1200px;}
 
-  h1.page-title{font-size:20px; margin:0 0 4px 0; color:var(--text);}
-  p.page-sub{margin:0 0 20px 0; color:var(--muted); font-size:13px;}
+  h1.page-title{font-family:var(--font-display); font-size:22px; margin:0 0 4px 0; color:var(--text); letter-spacing:.02em; text-transform:uppercase;}
+  p.page-sub{margin:0 0 22px 0; color:var(--muted); font-size:13px;}
 
   .tab{display:none;}
   .tab.active{display:block;}
 
   .card{
-    background:var(--panel); border:1px solid var(--border); border-radius:12px;
-    padding:20px; margin-bottom:20px;
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:22px; margin-bottom:20px;
   }
-  .card h2{margin-top:0; font-size:15px; color:var(--accent-dark); font-weight:600;}
+  .card h2{
+    margin-top:0; font-size:13px; color:var(--accent); font-weight:600; font-family:var(--font-display);
+    text-transform:uppercase; letter-spacing:.06em; display:flex; align-items:center; gap:8px;
+  }
+  .card h2::before{content:""; width:4px; height:14px; background:var(--accent); border-radius:2px; display:inline-block;}
 
   .row{display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px;}
   .row > div{flex:1; min-width:150px;}
-  label{display:block; font-size:12px; color:var(--muted); margin-bottom:5px;}
+  label{display:block; font-size:11.5px; color:var(--muted); margin-bottom:5px; text-transform:uppercase; letter-spacing:.04em; font-weight:600;}
   input, select{
-    width:100%; padding:9px 11px; border-radius:7px; border:1px solid var(--border);
-    background:#fafffc; color:var(--text); font-size:14px;
+    width:100%; padding:9px 11px; border-radius:6px; border:1px solid var(--border);
+    background:#0f1216; color:var(--text); font-size:14px; font-family:var(--font-body);
   }
-  input:focus, select:focus{outline:none; border-color:var(--accent);}
+  input::placeholder{color:#565e6a;}
+  input:focus, select:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft);}
+  input:disabled{color:var(--muted); background:#15181d;}
 
   button.btn{
-    background:var(--accent); color:#fff; border:none; padding:10px 18px; border-radius:7px;
-    cursor:pointer; font-weight:600; font-size:13px;
+    background:var(--accent); color:#181a1e; border:none; padding:10px 20px; border-radius:6px;
+    cursor:pointer; font-weight:700; font-size:12.5px; font-family:var(--font-body);
+    text-transform:uppercase; letter-spacing:.03em;
   }
-  button.btn.secondary{background:var(--panel2); color:var(--accent-dark); border:1px solid var(--border);}
-  button.btn.danger{background:var(--danger-soft); color:var(--danger); border:1px solid #f3caca;}
-  button.btn:hover{opacity:.9;}
+  button.btn.secondary{background:var(--panel3); color:var(--text); border:1px solid var(--border); font-weight:600;}
+  button.btn.danger{background:var(--danger-soft); color:var(--danger); border:1px solid rgba(255,91,96,.35);}
+  button.btn:hover{filter:brightness(1.08);}
 
   table{width:100%; border-collapse:collapse; margin-top:12px; font-size:13px;}
-  th, td{padding:9px 10px; border-bottom:1px solid var(--border); text-align:left;}
-  th{color:var(--muted); font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.03em;}
+  th, td{padding:10px 10px; border-bottom:1px solid var(--border); text-align:left;}
+  td{font-family:var(--font-mono); font-size:12.5px; color:var(--text);}
+  th{color:var(--muted); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.05em; font-family:var(--font-body);}
   tr:hover td{background:var(--panel2);}
   .actions{display:flex; gap:6px;}
-  .actions button{padding:6px 10px; font-size:12px;}
+  .actions button{padding:6px 10px; font-size:11px;}
 
-  .badge{padding:3px 9px; border-radius:12px; font-size:11px; font-weight:600;}
-  .badge.livre{background:var(--accent-soft); color:var(--accent-dark);}
+  .badge{padding:3px 10px; border-radius:20px; font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; font-family:var(--font-body);}
+  .badge.livre{background:var(--livre-soft); color:var(--livre);}
   .badge.ocupada{background:var(--danger-soft); color:var(--danger);}
 
   .toast{
-    position:fixed; bottom:22px; right:22px; padding:12px 18px; border-radius:9px;
+    position:fixed; bottom:22px; right:22px; padding:13px 18px; border-radius:8px;
     background:var(--panel); border:1px solid var(--border); font-size:13px; color:var(--text);
-    box-shadow:0 6px 18px rgba(0,0,0,.08); display:none; max-width:340px; z-index:99;
+    box-shadow:0 10px 30px rgba(0,0,0,.4); display:none; max-width:340px; z-index:99;
+    border-left:4px solid var(--accent);
   }
-  .toast.error{border-color:#f3caca; background:var(--danger-soft); color:#a33333;}
-  .toast.success{border-color:var(--accent-soft); background:var(--baby); color:var(--accent-dark);}
+  .toast.error{border-left-color:var(--danger); background:#241819; color:#ffb3b5;}
+  .toast.success{border-left-color:var(--livre); background:#122019; color:#a9f0c4;}
 
   .grid-stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px;}
-  .stat{background:var(--baby); border:1px solid var(--border); border-radius:10px; padding:16px; text-align:center;}
-  .stat .n{font-size:24px; font-weight:700; color:var(--accent-dark);}
-  .stat .l{font-size:12px; color:var(--muted); margin-top:4px;}
+  .stat{background:var(--panel2); border:1px solid var(--border); border-radius:8px; padding:16px; text-align:center;}
+  .stat .n{font-family:var(--font-display); font-size:26px; font-weight:700; color:var(--accent);}
+  .stat .l{font-size:11px; color:var(--muted); margin-top:4px; text-transform:uppercase; letter-spacing:.04em;}
   .empty{color:var(--muted); font-size:13px; padding:12px 0;}
 
-  /* ---------- MAPA DE VAGAS (estilo cinema) ---------- */
-  .setor-block{margin-bottom:26px;}
+  /* ---------- MAPA DE VAGAS (piso pintado, estilo garagem) ---------- */
+  .setor-block{margin-bottom:28px;}
   .setor-titulo{
-    font-size:13px; font-weight:700; color:var(--muted); text-transform:uppercase;
-    letter-spacing:.05em; margin-bottom:10px;
+    font-family:var(--font-display); font-size:13px; font-weight:600; color:var(--text);
+    text-transform:uppercase; letter-spacing:.06em; margin-bottom:10px; display:flex; align-items:center; gap:8px;
   }
+  .setor-titulo::before{content:"P"; width:20px; height:20px; border-radius:4px; background:var(--panel3); color:var(--accent);
+    font-size:11px; display:flex; align-items:center; justify-content:center; font-weight:700;}
+
   .mapa-tela{
-    text-align:center; color:var(--muted); font-size:11px; letter-spacing:.15em;
-    text-transform:uppercase; border-bottom:2px solid var(--accent-soft); padding-bottom:8px; margin-bottom:18px;
+    text-align:center; color:#181a1e; font-size:11px; letter-spacing:.25em; font-family:var(--font-display);
+    font-weight:600; text-transform:uppercase; padding:10px; margin-bottom:20px; border-radius:6px;
+    background:repeating-linear-gradient(135deg, var(--accent) 0 14px, #1a1c20 14px 28px);
   }
+  .mapa-tela span{background:var(--panel); padding:4px 14px; border-radius:4px; color:var(--accent);}
+
   .vagas-grid{
-    display:grid; grid-template-columns:repeat(auto-fill, minmax(56px, 1fr)); gap:10px;
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(58px, 1fr)); gap:10px;
   }
   .vaga-seat{
-    aspect-ratio:1/1; border-radius:8px 8px 4px 4px; border:1.5px solid var(--border);
-    display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600;
-    cursor:pointer; background:var(--panel2); color:var(--accent-dark); position:relative;
-    transition:transform .08s ease;
+    aspect-ratio:1/1; border-radius:4px; border:2px dashed #3a4149;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+    font-family:var(--font-mono); font-size:12px; font-weight:700;
+    cursor:pointer; background:#181c22; color:var(--muted); position:relative;
+    transition:transform .08s ease, border-color .12s ease;
   }
   .vaga-seat:hover{transform:translateY(-2px);}
-  .vaga-seat.livre{background:var(--accent-soft); color:var(--accent-dark); border-color:var(--accent);}
-  .vaga-seat.ocupada{background:var(--danger-soft); color:#a33333; border-color:#f0b3b3; cursor:not-allowed;}
-  .vaga-seat.selecionada{background:var(--accent-dark); color:#fff; border-color:var(--accent-dark); transform:translateY(-2px);}
-  .legenda{display:flex; gap:18px; margin-top:16px; font-size:12px; color:var(--muted); flex-wrap:wrap;}
-  .legenda span{display:inline-flex; align-items:center; gap:6px;}
-  .legenda i{width:14px; height:14px; border-radius:4px; display:inline-block;}
-  .legenda i.livre{background:var(--accent-soft); border:1px solid var(--accent);}
-  .legenda i.ocupada{background:var(--danger-soft); border:1px solid #f0b3b3;}
-  .legenda i.selecionada{background:var(--accent-dark);}
+  .vaga-seat.livre{background:var(--livre-soft); color:var(--livre); border:2px dashed var(--livre);}
+  .vaga-seat.ocupada{background:var(--danger-soft); color:var(--danger); border:2px solid var(--danger); cursor:not-allowed;}
+  .vaga-seat.ocupada::before{content:"\1F697"; font-size:14px; line-height:1;}
+  .vaga-seat.selecionada{background:var(--accent); color:#181a1e; border:2px solid var(--accent-dark); transform:translateY(-2px);
+    box-shadow:0 0 0 4px var(--accent-soft);}
+
+  .legenda{display:flex; gap:18px; margin-top:18px; font-size:11.5px; color:var(--muted); flex-wrap:wrap; text-transform:uppercase; letter-spacing:.03em;}
+  .legenda span{display:inline-flex; align-items:center; gap:7px;}
+  .legenda i{width:14px; height:14px; border-radius:3px; display:inline-block;}
+  .legenda i.livre{background:var(--livre-soft); border:2px dashed var(--livre);}
+  .legenda i.ocupada{background:var(--danger-soft); border:2px solid var(--danger);}
+  .legenda i.selecionada{background:var(--accent);}
 
   @media (max-width: 860px){
     aside{width:70px;}
-    aside .logo span.full{display:none;}
+    aside .logo span.full, aside .logo .logo-text, aside .logo small{display:none;}
+    aside .logo{justify-content:center; padding:20px 10px;}
     nav.side-nav button span.full{display:none;}
+    nav.side-nav button{text-align:center;}
     main{margin-left:70px; padding:20px;}
+    .side-status{display:none;}
   }
 </style>
 </head>
@@ -150,7 +196,10 @@
 <div class="app">
 
   <aside>
-    <div class="logo">P <span class="full">Estacionamento</span><small class="full">Painel de controle</small></div>
+    <div class="logo">
+      <div class="badge-p">P</div>
+      <div class="logo-text full">Estacionamento<small>Painel de controle</small></div>
+    </div>
     <nav class="side-nav">
       <button class="side-btn active" data-tab="patio"><span class="full">Mapa de Vagas</span></button>
       <button class="side-btn" data-tab="clientes"><span class="full">Clientes</span></button>
@@ -171,7 +220,7 @@
 
       <div class="card">
         <h2>Vagas do estacionamento</h2>
-        <div class="mapa-tela">Entrada principal</div>
+        <div class="mapa-tela"><span>Entrada principal</span></div>
         <div id="mapaVagas"></div>
         <div class="legenda">
           <span><i class="livre"></i> Livre</span>
@@ -557,7 +606,7 @@ async function registrarSaida(){
   const div = document.getElementById("saidaResultado");
   if(r){
     div.innerHTML = `
-      <div class="card" style="background:var(--baby); margin:0;">
+      <div class="card" style="margin:0;">
         <strong>Placa:</strong> ${r.placa}<br>
         <strong>Entrada:</strong> ${r.data_entrada}<br>
         <strong>Saída:</strong> ${r.data_saida}<br>
