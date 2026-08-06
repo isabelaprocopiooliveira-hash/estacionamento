@@ -1,2115 +1,1549 @@
 <!DOCTYPE html>
-<!-- Declaração do tipo de documento: HTML5 -->
 <html lang="pt-BR">
-<!-- Elemento raiz do HTML; lang="pt-BR" define o idioma da página -->
 <head>
-  <!-- Início do cabeçalho: metadados, título, fontes e estilos -->
-  <meta charset="UTF-8">
-  <!-- Codificação de caracteres UTF-8 -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Configuração de viewport para responsividade -->
-  <title>Sistema de Estacionamento</title>
-  <!-- Título exibido na aba do navegador -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PARKI · Gestão de Estacionamento</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --asphalt:#14161A;
+  --surface:#1C1F24;
+  --surface-2:#242830;
+  --surface-3:#2E333C;
+  --border:#363C46;
+  --line:#FFC94A;
+  --line-ink:#1A1503;
+  --green:#4FBF8B;
+  --green-dim:#22352C;
+  --red:#E5584B;
+  --red-dim:#3A2523;
+  --blue:#5B9BD9;
+  --blue-dim:#1F2C38;
+  --paper:#EDEEF0;
+  --steel:#8B929C;
+  --steel-2:#5F6570;
+  --radius:10px;
+  --radius-sm:6px;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--asphalt);
+  color:var(--paper);
+  font-family:'Inter',sans-serif;
+  font-size:14px;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+::selection{background:var(--line);color:var(--line-ink);}
+h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif;margin:0;letter-spacing:-0.01em;}
+.mono{font-family:'JetBrains Mono',monospace;}
+a{color:inherit;}
+button{font-family:'Inter',sans-serif;cursor:pointer;}
+::-webkit-scrollbar{width:9px;height:9px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--surface-3);border-radius:10px;}
+::-webkit-scrollbar-thumb:hover{background:var(--steel-2);}
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <!-- Pré-conexão com o domínio de fontes do Google -->
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <!-- Pré-conexão com o domínio de arquivos de fonte, com CORS -->
-  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
-  <!-- Importa as fontes Oswald, Inter e JetBrains Mono usadas no projeto -->
+/* ---------- Layout shell ---------- */
+#shell{display:flex;min-height:100vh;}
 
-  <style>
-  /* Abertura da tag style: início de todo o CSS do documento */
+/* Sidebar */
+#sidebar{
+  width:236px;flex:0 0 236px;background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;position:sticky;top:0;height:100vh;
+}
+.brand{display:flex;align-items:center;gap:10px;padding:22px 20px 18px;border-bottom:1px solid var(--border);}
+.brand-mark{
+  width:34px;height:34px;border-radius:8px;background:var(--line);
+  display:flex;align-items:center;justify-content:center;flex:0 0 34px;
+  position:relative;
+}
+.brand-mark::before{content:"P";font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:18px;color:var(--line-ink);}
+.brand-text h1{font-size:16px;color:var(--paper);}
+.brand-text span{display:block;font-size:10.5px;color:var(--steel);letter-spacing:.08em;text-transform:uppercase;margin-top:1px;}
 
-  :root{
-    /* Abre o bloco de variáveis CSS globais (:root = elemento raiz do documento) */
+nav.nav{padding:14px 12px;flex:1;overflow-y:auto;}
+.nav-group-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--steel-2);padding:14px 10px 6px;font-weight:600;}
+.nav-item{
+  display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:8px;
+  color:var(--steel);font-size:13.5px;font-weight:500;margin-bottom:2px;
+  border:1px solid transparent;transition:background .12s,color .12s;
+}
+.nav-item svg{width:17px;height:17px;flex:0 0 17px;opacity:.85;}
+.nav-item:hover{background:var(--surface-2);color:var(--paper);}
+.nav-item.active{background:var(--surface-2);color:var(--paper);border-color:var(--border);}
+.nav-item.active svg{opacity:1;color:var(--line);}
+.nav-badge{margin-left:auto;background:var(--surface-3);color:var(--steel);font-size:10.5px;padding:1px 7px;border-radius:20px;font-family:'JetBrains Mono',monospace;}
+.nav-item.active .nav-badge{background:var(--line);color:var(--line-ink);}
 
-    /* ---- Paleta: asfalto + sinalização de garagem ---- */
-    --bg:#12151a;
-    /* Cor de fundo geral da página (asfalto escuro) */
-    --panel:#1b1f26;
-    /* Cor de fundo dos painéis/cards */
-    --panel2:#232830;
-    /* Cor de fundo secundária (hover, blocos internos) */
-    --panel3:#2b313b;
-    /* Cor de fundo terciária (botões secundários, selos) */
-    --accent:#f5b400;
-    /* Cor de destaque amarela (sinalização/cancela) */
-    --accent-dark:#c99000;
-    /* Variação escura da cor de destaque */
-    --accent-soft:rgba(245,180,0,.16);
-    /* Versão translúcida da cor de destaque */
-    --text:#edf0f3;
-    /* Cor principal do texto */
-    --muted:#8891a0;
-    /* Cor de texto secundário/apagado */
-    --border:#2a2f38;
-    /* Cor padrão de bordas e divisores */
-    --danger:#ff5b60;
-    /* Cor vermelha para "ocupada"/erro/exclusão */
-    --danger-soft:rgba(255,91,96,.14);
-    /* Versão translúcida do vermelho */
-    --livre:#2ed378;
-    /* Cor verde para vaga "livre" */
-    --livre-soft:rgba(46,211,120,.14);
-    /* Versão translúcida do verde */
-    --sidebar-w:226px;
-    /* Largura fixa da barra lateral */
-    --font-display:'Oswald', sans-serif;
-    /* Fonte de títulos e números grandes */
-    --font-body:'Inter', system-ui, sans-serif;
-    /* Fonte do texto corrido/formulários */
-    --font-mono:'JetBrains Mono', monospace;
-    /* Fonte monoespaçada de placas e tabelas */
-  }
-  /* Fecha o bloco :root */
+.sidebar-foot{padding:14px 18px 18px;border-top:1px solid var(--border);}
+.op-card{display:flex;align-items:center;gap:10px;}
+.op-avatar{width:32px;height:32px;border-radius:50%;background:var(--surface-3);display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:12px;color:var(--paper);border:1px solid var(--border);}
+.op-info div:first-child{font-size:12.5px;font-weight:600;color:var(--paper);}
+.op-info div:last-child{font-size:11px;color:var(--steel);}
 
-  *{
-    /* Seletor universal: aplica a regra a todos os elementos */
-    box-sizing:border-box;
-    /* Inclui padding e border no cálculo de largura/altura */
-  }
-  /* Fecha o bloco do seletor universal */
+/* Main */
+#main{flex:1;min-width:0;display:flex;flex-direction:column;}
+#topbar{
+  height:64px;flex:0 0 64px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:18px;padding:0 26px;
+  background:rgba(28,31,36,.7);backdrop-filter:blur(6px);position:sticky;top:0;z-index:20;
+}
+#topbar h2{font-size:18px;}
+.topbar-sub{font-size:12px;color:var(--steel);margin-top:1px;}
+.search-box{
+  margin-left:auto;display:flex;align-items:center;gap:8px;background:var(--surface-2);
+  border:1px solid var(--border);border-radius:8px;padding:8px 12px;width:280px;
+}
+.search-box svg{width:15px;height:15px;color:var(--steel);flex:0 0 15px;}
+.search-box input{background:none;border:none;outline:none;color:var(--paper);font-size:13px;width:100%;}
+.search-box input::placeholder{color:var(--steel-2);}
+.clock{font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--steel);white-space:nowrap;padding-left:16px;border-left:1px solid var(--border);}
 
-  body{
-    /* Seletor do elemento <body> */
-    margin:0;
-    /* Remove a margem padrão do navegador */
-    font-family:var(--font-body);
-    /* Usa a fonte de corpo definida em :root */
-    background:var(--bg);
-    /* Aplica a cor de fundo geral */
-    color:var(--text);
-    /* Cor de texto padrão */
-    background-image:
-      radial-gradient(circle at 10% 0%, rgba(245,180,0,.05), transparent 45%),
-      /* Primeiro gradiente radial: leve mancha amarela no canto superior esquerdo */
-      radial-gradient(circle at 90% 100%, rgba(46,211,120,.04), transparent 40%);
-      /* Segundo gradiente radial: leve mancha verde no canto inferior direito */
-    background-attachment:fixed;
-    /* Fixa o gradiente em relação à janela ao rolar */
-  }
-  /* Fecha o bloco do <body> */
+#content{padding:26px 30px 60px;max-width:1360px;width:100%;margin:0 auto;}
+.view{display:none;animation:fadein .18s ease;}
+.view.active{display:block;}
+@keyframes fadein{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
 
-  /* ---------- LAYOUT GERAL ---------- */
-  .app{
-    /* Seletor da classe .app: contêiner geral (sidebar + conteúdo) */
-    display:flex;
-    /* Organiza filhos lado a lado */
-    min-height:100vh;
-    /* Altura mínima igual à da viewport */
-  }
-  /* Fecha o bloco .app */
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:22px;gap:16px;flex-wrap:wrap;}
+.page-head h3{font-size:22px;}
+.page-head p{color:var(--steel);font-size:13px;margin-top:4px;max-width:560px;}
+.head-actions{display:flex;gap:10px;}
 
-  aside{
-    /* Seletor do elemento <aside>: barra lateral */
-    width:var(--sidebar-w);
-    /* Largura fixa da sidebar */
-    background:var(--panel);
-    /* Cor de fundo da sidebar */
-    border-right:1px solid var(--border);
-    /* Linha divisória à direita */
-    display:flex;
-    /* Organiza filhos em coluna */
-    flex-direction:column;
-    /* Direção vertical do flex */
-    position:fixed;
-    /* Fixa a sidebar na tela */
-    top:0; left:0; bottom:0;
-    /* Cola do topo ao fundo da tela */
-    z-index:10;
-    /* Garante sobreposição ao conteúdo */
-  }
-  /* Fecha o bloco <aside> */
+/* Buttons */
+.btn{
+  display:inline-flex;align-items:center;gap:7px;border-radius:8px;padding:9px 15px;
+  font-size:13px;font-weight:600;border:1px solid var(--border);background:var(--surface-2);
+  color:var(--paper);transition:filter .12s,background .12s;white-space:nowrap;
+}
+.btn svg{width:14px;height:14px;}
+.btn:hover{background:var(--surface-3);}
+.btn-primary{background:var(--line);color:var(--line-ink);border-color:var(--line);}
+.btn-primary:hover{filter:brightness(1.06);}
+.btn-danger{background:var(--red-dim);color:#FF8177;border-color:#5A2E2A;}
+.btn-danger:hover{background:#432927;}
+.btn-ghost{background:transparent;}
+.btn-sm{padding:6px 10px;font-size:12px;border-radius:6px;}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
 
-  aside .logo{
-    /* Seletor do bloco de logotipo dentro da sidebar */
-    padding:20px 18px;
-    /* Espaçamento interno */
-    display:flex;
-    /* Alinha selo e texto lado a lado */
-    align-items:center;
-    /* Centraliza verticalmente */
-    gap:12px;
-    /* Espaço entre selo e texto */
-    border-bottom:1px solid var(--border);
-    /* Linha separando logo do menu */
-  }
-  /* Fecha o bloco .logo */
-  aside .logo .badge-p{
-    /* Seletor do selo "P" dentro do logotipo */
-    width:36px; height:36px; min-width:36px;
-    /* Tamanho fixo do selo */
-    border-radius:8px;
-    /* Cantos arredondados */
-    background:var(--accent);
-    /* Fundo amarelo */
-    color:#181a1e;
-    /* Texto escuro sobre o amarelo */
-    font-family:var(--font-display);
-    /* Fonte condensada */
-    font-weight:700; font-size:19px;
-    /* Peso e tamanho da letra "P" */
-    display:flex; align-items:center; justify-content:center;
-    /* Centraliza a letra dentro do selo */
-    box-shadow:0 0 0 3px rgba(245,180,0,.15);
-    /* Auréola suave ao redor do selo */
-  }
-  /* Fecha o bloco .badge-p */
-  aside .logo .logo-text{
-    /* Seletor do texto do nome do sistema */
-    font-family:var(--font-display);
-    /* Fonte condensada */
-    font-size:15px; font-weight:600; letter-spacing:.03em;
-    /* Tamanho, peso e espaçamento das letras */
-    color:var(--text); line-height:1.2;
-    /* Cor e altura de linha */
-  }
-  /* Fecha o bloco .logo-text */
-  aside .logo small{
-    /* Seletor do subtítulo "Painel de controle" */
-    display:block;
-    /* Quebra para nova linha */
-    font-size:10.5px; font-weight:400;
-    /* Tamanho e peso pequenos */
-    color:var(--muted);
-    /* Cor apagada */
-    margin-top:2px; letter-spacing:.04em; text-transform:uppercase;
-    /* Espaçamento e caixa alta */
-    font-family:var(--font-body);
-    /* Fonte de corpo */
-  }
-  /* Fecha o bloco .logo small */
+/* Cards / grids */
+.grid{display:grid;gap:16px;}
+.grid-4{grid-template-columns:repeat(4,1fr);}
+.grid-3{grid-template-columns:repeat(3,1fr);}
+.grid-2{grid-template-columns:2fr 1fr;}
+@media(max-width:1080px){.grid-4{grid-template-columns:repeat(2,1fr);}.grid-2{grid-template-columns:1fr;}}
 
-  nav.side-nav{
-    /* Seletor do menu de navegação lateral */
-    flex:1;
-    /* Ocupa o espaço vertical disponível */
-    padding:16px 10px;
-    /* Espaçamento interno do menu */
-  }
-  /* Fecha o bloco .side-nav */
-  nav.side-nav button{
-    /* Seletor de cada botão do menu */
-    display:block; width:100%;
-    /* Ocupa toda a largura da sidebar */
-    text-align:left;
-    /* Alinha o texto à esquerda */
-    background:none; border:none;
-    /* Remove estilo padrão de botão */
-    border-left:3px solid transparent;
-    /* Reserva espaço para a barra de destaque */
-    color:var(--muted);
-    /* Cor apagada quando inativo */
-    padding:11px 13px; cursor:pointer; font-size:13.5px; margin-bottom:2px;
-    /* Espaçamento, cursor e tamanho da fonte */
-    font-family:var(--font-body); font-weight:500; letter-spacing:.01em;
-    /* Fonte e peso do texto do botão */
-  }
-  /* Fecha o bloco nav.side-nav button */
-  nav.side-nav button.active{
-    /* Seletor do botão atualmente ativo */
-    background:var(--panel2);
-    /* Fundo destacado */
-    color:var(--accent);
-    /* Texto amarelo */
-    font-weight:600;
-    /* Texto em negrito */
-    border-left-color:var(--accent);
-    /* Barra amarela à esquerda */
-  }
-  /* Fecha o bloco .active */
-  nav.side-nav button:hover:not(.active){
-    /* Seletor do botão ao passar o mouse, exceto se já ativo */
-    background:var(--panel2);
-    /* Fundo de destaque no hover */
-    color:var(--text);
-    /* Texto mais claro no hover */
-  }
-  /* Fecha o bloco :hover:not(.active) */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;}
+.card-tight{padding:14px 16px;}
 
-  .side-status{
-    /* Seletor do bloco de status da API, no rodapé da sidebar */
-    padding:14px 20px;
-    /* Espaçamento interno */
-    border-top:1px solid var(--border);
-    /* Linha divisória acima */
-    font-size:11.5px; color:var(--muted);
-    /* Tamanho e cor do texto */
-    font-family:var(--font-mono);
-    /* Fonte monoespaçada, efeito de log técnico */
-  }
-  /* Fecha o bloco .side-status */
-  .dot{
-    /* Seletor da bolinha indicadora de status */
-    display:inline-block; width:8px; height:8px; border-radius:50%;
-    /* Tamanho e formato circular */
-    margin-right:7px; background:var(--muted);
-    /* Espaço à direita e cor neutra padrão */
-  }
-  /* Fecha o bloco .dot */
-  .dot.on{
-    /* Seletor da bolinha quando conectado */
-    background:var(--livre);
-    /* Cor verde */
-    box-shadow:0 0 0 3px var(--livre-soft);
-    /* Auréola verde suave */
-  }
-  /* Fecha o bloco .dot.on */
-  .dot.off{
-    /* Seletor da bolinha quando desconectado */
-    background:var(--danger);
-    /* Cor vermelha */
-    box-shadow:0 0 0 3px var(--danger-soft);
-    /* Auréola vermelha suave */
-  }
-  /* Fecha o bloco .dot.off */
+.kpi{position:relative;overflow:hidden;}
+.kpi .kpi-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.kpi .kpi-label{font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--steel);font-weight:600;}
+.kpi .kpi-icon{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;background:var(--surface-2);}
+.kpi .kpi-icon svg{width:15px;height:15px;}
+.kpi .kpi-value{font-family:'Space Grotesk',sans-serif;font-size:28px;font-weight:700;}
+.kpi .kpi-note{font-size:11.5px;color:var(--steel);margin-top:6px;}
+.kpi .kpi-note.up{color:var(--green);}
+.kpi .kpi-note.down{color:var(--red);}
 
-  main{
-    /* Seletor do elemento <main>: conteúdo principal */
-    margin-left:var(--sidebar-w);
-    /* Desloca o conteúdo para não ficar sob a sidebar fixa */
-    flex:1;
-    /* Ocupa o restante da largura */
-    padding:30px 34px;
-    /* Espaçamento interno */
-    max-width:1200px;
-    /* Largura máxima do conteúdo */
-  }
-  /* Fecha o bloco <main> */
+.section-title{display:flex;align-items:center;justify-content:space-between;margin:30px 0 14px;}
+.section-title h4{font-size:15px;}
+.section-title .hint{font-size:12px;color:var(--steel);}
 
-  h1.page-title{
-    /* Seletor do título de cada página/aba */
-    font-family:var(--font-display);
-    /* Fonte condensada */
-    font-size:22px; margin:0 0 4px 0;
-    /* Tamanho e margem inferior pequena */
-    color:var(--text); letter-spacing:.02em; text-transform:uppercase;
-    /* Cor, espaçamento e caixa alta */
-  }
-  /* Fecha o bloco h1.page-title */
-  p.page-sub{
-    /* Seletor do subtítulo explicativo */
-    margin:0 0 22px 0; color:var(--muted); font-size:13px;
-    /* Margem, cor apagada e tamanho pequeno */
-  }
-  /* Fecha o bloco p.page-sub */
+/* ---------- Mapa de vagas (signature element) ---------- */
+.lot-legend{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:16px;font-size:12px;color:var(--steel);}
+.lot-legend span{display:inline-flex;align-items:center;gap:6px;}
+.lot-legend i{width:11px;height:11px;border-radius:3px;display:inline-block;}
+.lot-sector{margin-bottom:26px;}
+.lot-sector-head{display:flex;align-items:baseline;gap:10px;margin-bottom:10px;}
+.lot-sector-head h5{font-family:'Space Grotesk',sans-serif;font-size:14px;color:var(--paper);}
+.lot-sector-head .lot-count{font-size:11.5px;color:var(--steel);font-family:'JetBrains Mono',monospace;}
+.lot-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:8px;}
+.spot{
+  border-radius:7px;padding:9px 10px;min-height:64px;position:relative;cursor:pointer;
+  border:1.5px dashed var(--steel-2);background:transparent;transition:transform .1s,border-color .1s;
+  display:flex;flex-direction:column;justify-content:space-between;
+}
+.spot:hover{transform:translateY(-2px);}
+.spot .spot-num{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--steel);}
+.spot .spot-tag{font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--steel-2);}
+.spot.livre{border-color:#2E4A3E;}
+.spot.livre .spot-num{color:var(--green);}
+.spot.ocupado{
+  border-style:solid;border-color:var(--border);background:var(--surface-2);
+  border-left:3px solid var(--red);
+}
+.spot.ocupado .spot-plate{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:13px;color:var(--paper);}
+.spot.ocupado .spot-time{font-size:10px;color:var(--steel);margin-top:2px;}
+.spot.manutencao{border-style:solid;border-color:#4A3A1E;background:repeating-linear-gradient(45deg,var(--surface),var(--surface) 6px,#2A2410 6px,#2A2410 12px);opacity:.75;}
+.spot.manutencao .spot-num{color:#C99B3E;}
+.spot-badge{position:absolute;top:6px;right:6px;font-size:8px;background:var(--blue-dim);color:var(--blue);padding:1px 5px;border-radius:4px;letter-spacing:.03em;}
 
-  .tab{ display:none; }
-  /* Esconde por padrão qualquer aba de conteúdo */
-  .tab.active{ display:block; }
-  /* Exibe apenas a aba marcada como ativa */
+/* ---------- Tables ---------- */
+.table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius);}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+thead th{
+  text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--steel);
+  padding:11px 14px;background:var(--surface-2);border-bottom:1px solid var(--border);font-weight:600;white-space:nowrap;
+}
+tbody td{padding:12px 14px;border-bottom:1px solid var(--border);color:var(--paper);vertical-align:middle;white-space:nowrap;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:var(--surface-2);}
+td.plate,.mono-cell{font-family:'JetBrains Mono',monospace;letter-spacing:.02em;}
+.table-actions{display:flex;gap:6px;}
+.table-empty{padding:34px 14px;text-align:center;color:var(--steel);font-size:13px;}
 
-  .card{
-    /* Seletor do cartão/painel usado em toda a interface */
-    background:var(--panel);
-    /* Fundo do cartão */
-    border:1px solid var(--border);
-    /* Borda sutil */
-    border-radius:10px;
-    /* Cantos arredondados */
-    padding:22px;
-    /* Espaçamento interno */
-    margin-bottom:20px;
-    /* Espaço abaixo de cada cartão */
-  }
-  /* Fecha o bloco .card */
-  .card h2{
-    /* Seletor do título dentro de um cartão */
-    margin-top:0;
-    /* Remove margem superior padrão do h2 */
-    font-size:13px; color:var(--accent); font-weight:600; font-family:var(--font-display);
-    /* Tamanho, cor, peso e fonte do título */
-    text-transform:uppercase; letter-spacing:.06em;
-    /* Caixa alta e espaçamento entre letras */
-    display:flex; align-items:center; gap:8px;
-    /* Alinha o marcador decorativo com o texto */
-  }
-  /* Fecha o bloco .card h2 */
-  .card h2::before{
-    /* Pseudo-elemento decorativo antes do título do cartão */
-    content:"";
-    /* Elemento vazio, apenas visual */
-    width:4px; height:14px;
-    /* Dimensões da barra decorativa */
-    background:var(--accent);
-    /* Cor de destaque amarela */
-    border-radius:2px; display:inline-block;
-    /* Cantos levemente arredondados */
-  }
-  /* Fecha o bloco .card h2::before */
+.pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;}
+.pill.green{background:var(--green-dim);color:var(--green);}
+.pill.red{background:var(--red-dim);color:#FF8177;}
+.pill.blue{background:var(--blue-dim);color:var(--blue);}
+.pill.gray{background:var(--surface-3);color:var(--steel);}
+.pill.line{background:#3A2E0C;color:var(--line);}
 
-  .row{
-    /* Seletor de uma linha de campos de formulário */
-    display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px;
-    /* Organiza campos lado a lado, com quebra automática */
-  }
-  /* Fecha o bloco .row */
-  .row > div{ flex:1; min-width:150px; }
-  /* Cada campo filho direto de .row cresce igualmente com largura mínima */
+.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+.toolbar .search-box{width:240px;margin-left:0;}
+select,.select{
+  background:var(--surface-2);border:1px solid var(--border);color:var(--paper);border-radius:8px;
+  padding:8px 12px;font-size:13px;outline:none;font-family:'Inter',sans-serif;
+}
+.toolbar-spacer{flex:1;}
+.filter-chips{display:flex;gap:6px;flex-wrap:wrap;}
+.chip{padding:6px 12px;border-radius:20px;font-size:12px;border:1px solid var(--border);background:var(--surface-2);color:var(--steel);font-weight:500;}
+.chip.active{background:var(--line);color:var(--line-ink);border-color:var(--line);}
 
-  label{
-    /* Seletor de todos os rótulos de campo */
-    display:block; font-size:11.5px; color:var(--muted); margin-bottom:5px;
-    /* Bloco próprio, tamanho pequeno, cor apagada */
-    text-transform:uppercase; letter-spacing:.04em; font-weight:600;
-    /* Caixa alta e negrito leve */
-  }
-  /* Fecha o bloco label */
-  input, select{
-    /* Seletor conjunto de campos de texto e listas suspensas */
-    width:100%; padding:9px 11px; border-radius:6px; border:1px solid var(--border);
-    /* Largura total, espaçamento interno e borda */
-    background:#0f1216;
-    /* Fundo bem escuro, efeito "console" */
-    color:var(--text); font-size:14px; font-family:var(--font-body);
-    /* Cor e fonte do texto digitado */
-  }
-  /* Fecha o bloco input, select */
-  input::placeholder{ color:#565e6a; }
-  /* Cor do texto de exemplo dentro dos campos */
-  input:focus, select:focus{
-    /* Seletor de campos quando estão em foco */
-    outline:none;
-    /* Remove o contorno padrão do navegador */
-    border-color:var(--accent);
-    /* Borda amarela ao focar */
-    box-shadow:0 0 0 3px var(--accent-soft);
-    /* Auréola amarela suave ao focar */
-  }
-  /* Fecha o bloco :focus */
-  input:disabled{
-    /* Seletor de campos desabilitados */
-    color:var(--muted);
-    /* Texto apagado */
-    background:#15181d;
-    /* Fundo levemente diferente */
-  }
-  /* Fecha o bloco :disabled */
+/* ---------- Forms / Modal ---------- */
+.overlay{position:fixed;inset:0;background:rgba(10,11,13,.6);backdrop-filter:blur(2px);display:none;align-items:flex-start;justify-content:center;z-index:100;padding:40px 20px;overflow-y:auto;}
+.overlay.active{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;width:100%;max-width:560px;animation:modalin .16s ease;}
+@keyframes modalin{from{opacity:0;transform:translateY(8px) scale(.98);}to{opacity:1;transform:none;}}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--border);}
+.modal-head h4{font-size:16px;}
+.modal-close{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;background:var(--surface-2);border:1px solid var(--border);color:var(--steel);}
+.modal-close:hover{color:var(--paper);}
+.modal-body{padding:20px 22px;max-height:64vh;overflow-y:auto;}
+.modal-foot{padding:16px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;}
 
-  button.btn{
-    /* Seletor do botão principal */
-    background:var(--accent);
-    /* Fundo amarelo de destaque */
-    color:#181a1e;
-    /* Texto escuro */
-    border:none; padding:10px 20px; border-radius:6px;
-    /* Sem borda, espaçamento e cantos arredondados */
-    cursor:pointer; font-weight:700; font-size:12.5px; font-family:var(--font-body);
-    /* Cursor de clique e tipografia em negrito */
-    text-transform:uppercase; letter-spacing:.03em;
-    /* Caixa alta e espaçamento entre letras */
-  }
-  /* Fecha o bloco button.btn */
-  button.btn.secondary{
-    /* Seletor do botão secundário */
-    background:var(--panel3);
-    /* Fundo neutro */
-    color:var(--text); border:1px solid var(--border); font-weight:600;
-    /* Cor de texto, borda e peso */
-  }
-  /* Fecha o bloco .secondary */
-  button.btn.danger{
-    /* Seletor do botão de ação destrutiva */
-    background:var(--danger-soft);
-    /* Fundo vermelho suave */
-    color:var(--danger); border:1px solid rgba(255,91,96,.35);
-    /* Texto vermelho e borda combinando */
-  }
-  /* Fecha o bloco .danger */
-  button.btn:hover{ filter:brightness(1.08); }
-  /* Leve clareamento de qualquer botão ao passar o mouse */
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--steel);margin-bottom:6px;}
+.field input,.field select,.field textarea{
+  width:100%;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;
+  padding:9px 12px;color:var(--paper);font-size:13.5px;outline:none;font-family:'Inter',sans-serif;
+}
+.field input.mono,.field .mono-input{font-family:'JetBrains Mono',monospace;text-transform:uppercase;}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--line);}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.field-hint{font-size:11px;color:var(--steel-2);margin-top:5px;}
+.field-warn{font-size:11.5px;color:#FFB65C;margin-top:6px;display:none;}
+.field-warn.show{display:block;}
 
-  table{
-    /* Seletor de todas as tabelas */
-    width:100%; border-collapse:collapse; margin-top:12px; font-size:13px;
-    /* Largura total e bordas colapsadas (sem espaço duplo) */
-  }
-  /* Fecha o bloco table */
-  th, td{
-    /* Seletor conjunto de células de cabeçalho e de dados */
-    padding:10px 10px; border-bottom:1px solid var(--border); text-align:left;
-    /* Espaçamento interno e linha divisória inferior */
-  }
-  /* Fecha o bloco th, td */
-  td{
-    /* Seletor específico das células de dados */
-    font-family:var(--font-mono);
-    /* Fonte monoespaçada para dados/placas */
-    font-size:12.5px; color:var(--text);
-    /* Tamanho e cor do texto */
-  }
-  /* Fecha o bloco td */
-  th{
-    /* Seletor específico das células de cabeçalho */
-    color:var(--muted); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.05em;
-    /* Cor apagada, negrito leve e caixa alta */
-    font-family:var(--font-body);
-    /* Fonte de corpo padrão */
-  }
-  /* Fecha o bloco th */
-  tr:hover td{ background:var(--panel2); }
-  /* Destaca a linha inteira da tabela ao passar o mouse */
-  .actions{ display:flex; gap:6px; }
-  /* Agrupa os botões de ação lado a lado dentro da tabela */
-  .actions button{ padding:6px 10px; font-size:11px; }
-  /* Reduz o tamanho dos botões de ação dentro da tabela */
+.callout{border-radius:8px;padding:12px 14px;font-size:12.5px;display:flex;gap:10px;align-items:flex-start;margin-bottom:16px;}
+.callout svg{width:16px;height:16px;flex:0 0 16px;margin-top:1px;}
+.callout.info{background:var(--blue-dim);color:#A9CBE8;}
+.callout.warn{background:#3A2E0C;color:#F2CB7B;}
+.callout.ok{background:var(--green-dim);color:#8FDBB6;}
 
-  .badge{
-    /* Seletor do selo de status (livre/ocupada) */
-    padding:3px 10px; border-radius:20px; font-size:10.5px; font-weight:700;
-    /* Formato de pílula, pequeno e em negrito */
-    text-transform:uppercase; letter-spacing:.04em; font-family:var(--font-body);
-    /* Caixa alta e espaçamento entre letras */
-  }
-  /* Fecha o bloco .badge */
-  .badge.livre{ background:var(--livre-soft); color:var(--livre); }
-  /* Selo verde para vaga livre */
-  .badge.ocupada{ background:var(--danger-soft); color:var(--danger); }
-  /* Selo vermelho para vaga ocupada */
+/* Charge summary box */
+.charge-box{background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:14px 16px;margin-top:4px;}
+.charge-row{display:flex;justify-content:space-between;font-size:12.5px;color:var(--steel);padding:4px 0;}
+.charge-row.total{border-top:1px solid var(--border);margin-top:6px;padding-top:10px;font-size:15px;color:var(--paper);font-weight:700;font-family:'Space Grotesk',sans-serif;}
+.charge-row.total .mono{color:var(--line);}
 
-  .toast{
-    /* Seletor da notificação flutuante */
-    position:fixed; bottom:22px; right:22px;
-    /* Fixada no canto inferior direito da tela */
-    padding:13px 18px; border-radius:8px;
-    /* Espaçamento interno e cantos arredondados */
-    background:var(--panel); border:1px solid var(--border);
-    /* Fundo e borda padrão */
-    font-size:13px; color:var(--text);
-    /* Tamanho e cor do texto */
-    box-shadow:0 10px 30px rgba(0,0,0,.4);
-    /* Sombra para destacar sobre o conteúdo */
-    display:none;
-    /* Escondida por padrão, controlada via JavaScript */
-    max-width:340px; z-index:99;
-    /* Largura máxima e prioridade de sobreposição */
-    border-left:4px solid var(--accent);
-    /* Barra lateral colorida indicando o tipo de mensagem */
-  }
-  /* Fecha o bloco .toast */
-  .toast.error{
-    /* Seletor da variante de erro */
-    border-left-color:var(--danger); background:#241819; color:#ffb3b5;
-    /* Cores em tom vermelho */
-  }
-  /* Fecha o bloco .toast.error */
-  .toast.success{
-    /* Seletor da variante de sucesso */
-    border-left-color:var(--livre); background:#122019; color:#a9f0c4;
-    /* Cores em tom verde */
-  }
-  /* Fecha o bloco .toast.success */
+/* Reports */
+.bars{display:flex;align-items:flex-end;gap:10px;height:150px;padding-top:10px;}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;height:100%;justify-content:flex-end;}
+.bar{width:100%;max-width:34px;background:linear-gradient(180deg,var(--line),#B78324);border-radius:5px 5px 2px 2px;position:relative;}
+.bar-col span.bv{font-size:10.5px;color:var(--steel);font-family:'JetBrains Mono',monospace;}
+.bar-col span.bl{font-size:10.5px;color:var(--steel-2);}
 
-  .grid-stats{
-    /* Seletor da grade de cartões de estatística */
-    display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px;
-    /* Grade responsiva que se reorganiza conforme a largura */
-  }
-  /* Fecha o bloco .grid-stats */
-  .stat{
-    /* Seletor de cada cartão individual de estatística */
-    background:var(--panel2); border:1px solid var(--border); border-radius:8px;
-    /* Fundo, borda e cantos arredondados */
-    padding:16px; text-align:center;
-    /* Espaçamento interno e texto centralizado */
-  }
-  /* Fecha o bloco .stat */
-  .stat .n{
-    /* Seletor do número grande dentro do cartão de estatística */
-    font-family:var(--font-display); font-size:26px; font-weight:700; color:var(--accent);
-    /* Fonte condensada, tamanho grande e cor de destaque */
-  }
-  /* Fecha o bloco .stat .n */
-  .stat .l{
-    /* Seletor da legenda pequena dentro do cartão */
-    font-size:11px; color:var(--muted); margin-top:4px; text-transform:uppercase; letter-spacing:.04em;
-    /* Texto pequeno, apagado e em caixa alta */
-  }
-  /* Fecha o bloco .stat .l */
-  .empty{ color:var(--muted); font-size:13px; padding:12px 0; }
-  /* Estilo da mensagem exibida quando não há dados a mostrar */
+.hbar-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.hbar-label{width:120px;font-size:12px;color:var(--steel);flex:0 0 120px;}
+.hbar-track{flex:1;height:9px;background:var(--surface-2);border-radius:6px;overflow:hidden;}
+.hbar-fill{height:100%;border-radius:6px;}
+.hbar-val{width:70px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--steel);flex:0 0 70px;}
 
-  /* ---------- MAPA DE VAGAS (piso pintado, estilo garagem) ---------- */
-  .setor-block{ margin-bottom:28px; }
-  /* Espaço entre um bloco de setor e o próximo */
-  .setor-titulo{
-    /* Seletor do título de cada setor no mapa */
-    font-family:var(--font-display); font-size:13px; font-weight:600; color:var(--text);
-    /* Fonte condensada e cor de texto padrão */
-    text-transform:uppercase; letter-spacing:.06em; margin-bottom:10px;
-    /* Caixa alta e espaçamento */
-    display:flex; align-items:center; gap:8px;
-    /* Alinha o ícone "P" com o nome do setor */
-  }
-  /* Fecha o bloco .setor-titulo */
-  .setor-titulo::before{
-    /* Pseudo-elemento do ícone "P" antes do nome do setor */
-    content:"P";
-    /* Letra exibida como ícone */
-    width:20px; height:20px; border-radius:4px; background:var(--panel3); color:var(--accent);
-    /* Dimensões, fundo e cor do ícone */
-    font-size:11px; display:flex; align-items:center; justify-content:center; font-weight:700;
-    /* Centraliza a letra dentro do quadrado */
-  }
-  /* Fecha o bloco .setor-titulo::before */
+.donut-wrap{display:flex;align-items:center;gap:22px;flex-wrap:wrap;}
+.donut{width:150px;height:150px;border-radius:50%;flex:0 0 150px;}
+.donut-legend{flex:1;min-width:160px;}
+.donut-legend .li{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--paper);margin-bottom:8px;}
+.donut-legend i{width:10px;height:10px;border-radius:3px;flex:0 0 10px;}
+.donut-legend b{margin-left:auto;font-family:'JetBrains Mono',monospace;color:var(--steel);font-weight:500;}
 
-  .mapa-tela{
-    /* Seletor da faixa decorativa "Entrada principal" */
-    text-align:center; color:#181a1e; font-size:11px; letter-spacing:.25em; font-family:var(--font-display);
-    /* Texto centralizado, escuro, com bastante espaçamento entre letras */
-    font-weight:600; text-transform:uppercase; padding:10px; margin-bottom:20px; border-radius:6px;
-    /* Negrito leve, caixa alta e espaçamento */
-    background:repeating-linear-gradient(135deg, var(--accent) 0 14px, #1a1c20 14px 28px);
-    /* Listras diagonais amarelo/preto, como o braço de uma cancela */
-  }
-  /* Fecha o bloco .mapa-tela */
-  .mapa-tela span{
-    /* Seletor do texto dentro da faixa listrada */
-    background:var(--panel); padding:4px 14px; border-radius:4px; color:var(--accent);
-    /* Rótulo destacado sobre a faixa */
-  }
-  /* Fecha o bloco .mapa-tela span */
+.toast-wrap{position:fixed;bottom:22px;right:22px;display:flex;flex-direction:column;gap:8px;z-index:200;}
+.toast{background:var(--surface-2);border:1px solid var(--border);border-left:3px solid var(--green);color:var(--paper);padding:12px 16px;border-radius:8px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.35);min-width:220px;animation:toastin .18s ease;}
+.toast.err{border-left-color:var(--red);}
+@keyframes toastin{from{opacity:0;transform:translateX(14px);}to{opacity:1;transform:none;}}
 
-  .vagas-grid{
-    /* Seletor da grade de vagas de um setor */
-    display:grid; grid-template-columns:repeat(auto-fill, minmax(58px, 1fr)); gap:10px;
-    /* Grade que se ajusta automaticamente à largura da tela */
-  }
-  /* Fecha o bloco .vagas-grid */
-  .vaga-seat{
-    /* Seletor de cada quadrado representando uma vaga */
-    aspect-ratio:1/1;
-    /* Mantém o quadrado proporcional (largura = altura) */
-    border-radius:4px; border:2px dashed #3a4149;
-    /* Cantos levemente arredondados e borda tracejada */
-    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
-    /* Centraliza o conteúdo em coluna */
-    font-family:var(--font-mono); font-size:12px; font-weight:700;
-    /* Fonte monoespaçada e negrito para o número da vaga */
-    cursor:pointer; background:#181c22; color:var(--muted); position:relative;
-    /* Cursor de clique e fundo neutro padrão */
-    transition:transform .08s ease, border-color .12s ease;
-    /* Suaviza a animação de hover */
-  }
-  /* Fecha o bloco .vaga-seat */
-  .vaga-seat:hover{ transform:translateY(-2px); }
-  /* Levanta levemente a vaga ao passar o mouse */
-  .vaga-seat.livre{
-    /* Seletor da vaga com status livre */
-    background:var(--livre-soft); color:var(--livre); border:2px dashed var(--livre);
-    /* Fundo, texto e borda em tom verde */
-  }
-  /* Fecha o bloco .vaga-seat.livre */
-  .vaga-seat.ocupada{
-    /* Seletor da vaga com status ocupada */
-    background:var(--danger-soft); color:var(--danger); border:2px solid var(--danger); cursor:not-allowed;
-    /* Fundo, texto e borda em tom vermelho; cursor indica bloqueio */
-  }
-  /* Fecha o bloco .vaga-seat.ocupada */
-  .vaga-seat.ocupada::before{
-    /* Pseudo-elemento do ícone de carro nas vagas ocupadas */
-    content:"\1F697"; font-size:14px; line-height:1;
-    /* Insere o emoji de carro acima do número */
-  }
-  /* Fecha o bloco .vaga-seat.ocupada::before */
-  .vaga-seat.selecionada{
-    /* Seletor da vaga atualmente escolhida pelo usuário */
-    background:var(--accent); color:#181a1e; border:2px solid var(--accent-dark); transform:translateY(-2px);
-    /* Fundo amarelo forte e leve elevação */
-    box-shadow:0 0 0 4px var(--accent-soft);
-    /* Auréola amarela suave ao redor */
-  }
-  /* Fecha o bloco .vaga-seat.selecionada */
+.empty-state{text-align:center;padding:50px 20px;color:var(--steel);}
+.empty-state h4{color:var(--paper);margin-bottom:6px;font-size:15px;}
+.empty-state p{font-size:12.5px;max-width:320px;margin:0 auto;}
 
-  .legenda{
-    /* Seletor da linha de legenda abaixo do mapa */
-    display:flex; gap:18px; margin-top:18px; font-size:11.5px; color:var(--muted); flex-wrap:wrap;
-    /* Itens lado a lado, com quebra automática */
-    text-transform:uppercase; letter-spacing:.03em;
-    /* Caixa alta e espaçamento entre letras */
-  }
-  /* Fecha o bloco .legenda */
-  .legenda span{ display:inline-flex; align-items:center; gap:7px; }
-  /* Cada item da legenda alinha o quadrado de cor com o texto */
-  .legenda i{ width:14px; height:14px; border-radius:3px; display:inline-block; }
-  /* Formato base do quadradinho de cor da legenda */
-  .legenda i.livre{ background:var(--livre-soft); border:2px dashed var(--livre); }
-  /* Quadradinho verde da legenda "Livre" */
-  .legenda i.ocupada{ background:var(--danger-soft); border:2px solid var(--danger); }
-  /* Quadradinho vermelho da legenda "Ocupada" */
-  .legenda i.selecionada{ background:var(--accent); }
-  /* Quadradinho amarelo da legenda "Selecionada" */
-
-  @media (max-width: 860px){
-    /* Abre bloco de regras para telas com até 860px de largura */
-    aside{ width:70px; }
-    /* Sidebar encolhe para mostrar só os ícones */
-    aside .logo span.full, aside .logo .logo-text, aside .logo small{ display:none; }
-    /* Esconde os textos do logotipo, mantendo só o selo */
-    aside .logo{ justify-content:center; padding:20px 10px; }
-    /* Centraliza o selo restante */
-    nav.side-nav button span.full{ display:none; }
-    /* Esconde o texto dos botões do menu */
-    nav.side-nav button{ text-align:center; }
-    /* Centraliza o conteúdo restante do botão */
-    main{ margin-left:70px; padding:20px; }
-    /* Ajusta a margem do conteúdo à sidebar reduzida */
-    .side-status{ display:none; }
-    /* Esconde o status da API em telas pequenas */
-  }
-  /* Fecha o bloco @media */
-  </style>
-  <!-- Fecha a tag style: fim de todo o CSS do documento -->
+@media(max-width:880px){
+  #sidebar{position:fixed;left:-236px;z-index:90;transition:left .18s;box-shadow:0 0 40px rgba(0,0,0,.4);}
+  #sidebar.open{left:0;}
+  .grid-4{grid-template-columns:1fr 1fr;}
+  #content{padding:18px;}
+  .search-box{display:none;}
+}
+</style>
 </head>
-<!-- Fecha o cabeçalho do documento -->
 <body>
-<!-- Abre o corpo visível da página -->
 
-<div class="app">
-  <!-- Abre o contêiner geral: agrupa sidebar e conteúdo -->
-
-  <aside>
-    <!-- Abre a barra lateral fixa de navegação -->
-    <div class="logo">
-      <!-- Abre o bloco do logotipo -->
-      <div class="badge-p">P</div>
-      <!-- Selo quadrado amarelo com a letra "P" -->
-      <div class="logo-text full">Estacionamento<small>Painel de controle</small></div>
-      <!-- Nome do sistema com subtítulo -->
+<div id="shell">
+  <aside id="sidebar">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div class="brand-text">
+        <h1>PARKI</h1>
+        <span>Gestão de pátio</span>
+      </div>
     </div>
-    <!-- Fecha o bloco do logotipo -->
-    <nav class="side-nav">
-      <!-- Abre o menu de navegação -->
-      <button class="side-btn active" data-tab="patio"><span class="full">Mapa de Vagas</span></button>
-      <!-- Botão da aba inicial, já ativa; data-tab define qual aba carregar -->
-      <button class="side-btn" data-tab="clientes"><span class="full">Clientes</span></button>
-      <!-- Botão da aba de Clientes -->
-      <button class="side-btn" data-tab="veiculos"><span class="full">Veículos</span></button>
-      <!-- Botão da aba de Veículos -->
-      <button class="side-btn" data-tab="vagas"><span class="full">Vagas</span></button>
-      <!-- Botão da aba de Vagas -->
-      <button class="side-btn" data-tab="tarifas"><span class="full">Tarifas</span></button>
-      <!-- Botão da aba de Tarifas -->
-      <button class="side-btn" data-tab="relatorios"><span class="full">Relatórios</span></button>
-      <!-- Botão da aba de Relatórios -->
-    </nav>
-    <!-- Fecha o menu de navegação -->
-    <div class="side-status full">
-      <!-- Abre o bloco de status da conexão com a API -->
-      <span class="dot off" id="statusDot"></span>
-      <!-- Bolinha colorida de status -->
-      <span id="statusApi">verificando...</span>
-      <!-- Texto descritivo do status -->
+    <nav class="nav" id="nav"></nav>
+    <div class="sidebar-foot">
+      <div class="op-card">
+        <div class="op-avatar">RS</div>
+        <div class="op-info">
+          <div>Renata Souza</div>
+          <div>Operadora · Turno dia</div>
+        </div>
+      </div>
     </div>
-    <!-- Fecha o bloco de status -->
   </aside>
-  <!-- Fecha a barra lateral -->
 
-  <main>
-    <!-- Abre a área principal de conteúdo -->
-
-    <!-- ===================== ABA: MAPA DE VAGAS ===================== -->
-    <div class="tab active" id="tab-patio">
-      <!-- Abre a aba "Mapa de Vagas", visível por padrão -->
-      <h1 class="page-title">Mapa de Vagas</h1>
-      <!-- Título da página -->
-      <p class="page-sub">Selecione uma vaga livre para registrar a entrada de um veículo.</p>
-      <!-- Instrução ao usuário -->
-
-      <div class="card">
-        <!-- Abre o cartão do mapa visual -->
-        <h2>Vagas do estacionamento</h2>
-        <!-- Título do cartão -->
-        <div class="mapa-tela"><span>Entrada principal</span></div>
-        <!-- Faixa decorativa da entrada -->
-        <div id="mapaVagas"></div>
-        <!-- Contêiner vazio preenchido dinamicamente via JavaScript -->
-        <div class="legenda">
-          <!-- Abre a legenda de cores -->
-          <span><i class="livre"></i> Livre</span>
-          <!-- Item da legenda: livre -->
-          <span><i class="ocupada"></i> Ocupada</span>
-          <!-- Item da legenda: ocupada -->
-          <span><i class="selecionada"></i> Selecionada</span>
-          <!-- Item da legenda: selecionada -->
-        </div>
-        <!-- Fecha a legenda -->
+  <div id="main">
+    <header id="topbar">
+      <button class="btn btn-ghost btn-sm" id="menuToggle" style="display:none;">☰</button>
+      <div>
+        <h2 id="pageTitle">Visão geral</h2>
+        <div class="topbar-sub" id="pageSub">Painel do estacionamento em tempo real</div>
       </div>
-      <!-- Fecha o cartão do mapa -->
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="globalSearch" placeholder="Buscar por placa, cliente..." />
+      </div>
+      <div class="clock" id="clock">--:--:--</div>
+    </header>
 
-      <div class="card">
-        <!-- Abre o cartão de registro de entrada -->
-        <h2>Registrar Entrada</h2>
-        <!-- Título do cartão -->
-        <div class="row">
-          <!-- Abre a linha de campos -->
+    <main id="content">
+
+      <!-- ===================== DASHBOARD ===================== -->
+      <section class="view" id="view-dashboard">
+        <div class="page-head">
           <div>
-            <!-- Campo: placa -->
-            <label>Placa</label>
-            <input id="entradaPlaca" placeholder="ABC1D23">
-            <!-- Entrada de texto para a placa -->
+            <h3>Visão geral</h3>
+            <p>Ocupação, movimento e faturamento do pátio em tempo real.</p>
           </div>
-          <!-- Fecha o campo de placa -->
-          <div>
-            <!-- Campo: vaga selecionada -->
-            <label>Vaga selecionada</label>
-            <input id="entradaVagaLabel" placeholder="Selecione no mapa acima" disabled>
-            <!-- Campo somente leitura mostrando a vaga escolhida -->
-            <input type="hidden" id="entradaVaga">
-            <!-- Campo oculto com o ID real da vaga -->
+          <div class="head-actions">
+            <button class="btn" data-goto="vagas">Ver mapa de vagas</button>
+            <button class="btn btn-primary" id="btnNovaEntradaTop">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+              Nova entrada
+            </button>
           </div>
-          <!-- Fecha o campo de vaga selecionada -->
-          <div>
-            <!-- Campo: tipo de cobrança -->
-            <label>Tipo de cobrança</label>
-            <select id="entradaCobranca">
-              <!-- Abre a lista suspensa de cobrança -->
-              <option value="hora">Hora</option>
-              <!-- Opção: hora -->
-              <option value="diaria">Diária</option>
-              <!-- Opção: diária -->
-              <option value="mensal">Mensal</option>
-              <!-- Opção: mensal -->
-              <option value="anual">Anual</option>
-              <!-- Opção: anual -->
-            </select>
-            <!-- Fecha a lista suspensa -->
-          </div>
-          <!-- Fecha o campo de tipo de cobrança -->
         </div>
-        <!-- Fecha a linha de campos -->
-        <button class="btn" onclick="registrarEntrada()">Registrar Entrada</button>
-        <!-- Botão que dispara registrarEntrada() -->
-      </div>
-      <!-- Fecha o cartão de registro de entrada -->
 
-      <div class="card">
-        <!-- Abre o cartão de registro de saída -->
-        <h2>Registrar Saída</h2>
-        <!-- Título do cartão -->
-        <div class="row">
-          <!-- Abre a linha de campos -->
-          <div>
-            <!-- Campo: placa de saída -->
-            <label>Placa do veículo no pátio</label>
-            <input id="saidaPlaca" placeholder="ABC1D23">
-            <!-- Entrada de texto para a placa que está saindo -->
+        <div class="grid grid-4" id="kpiRow"></div>
+
+        <div class="section-title"><h4>Faturamento · últimos 7 dias</h4><span class="hint">valores finalizados por dia</span></div>
+        <div class="card"><div class="bars" id="revenueBars"></div></div>
+
+        <div class="grid grid-2" style="margin-top:22px;">
+          <div class="card">
+            <div class="section-title" style="margin-top:0;"><h4>Movimentações recentes</h4><span class="hint" data-goto="movimentacao" style="cursor:pointer;">ver tudo →</span></div>
+            <div class="table-wrap"><table>
+              <thead><tr><th>Placa</th><th>Vaga</th><th>Entrada</th><th>Status</th><th>Valor</th></tr></thead>
+              <tbody id="recentMoveBody"></tbody>
+            </table></div>
           </div>
-          <!-- Fecha o campo de placa de saída -->
-        </div>
-        <!-- Fecha a linha de campos -->
-        <button class="btn danger" onclick="registrarSaida()">Registrar Saída</button>
-        <!-- Botão vermelho que dispara registrarSaida() -->
-        <div id="saidaResultado" style="margin-top:14px;"></div>
-        <!-- Espaço onde o resumo da saída será exibido -->
-      </div>
-      <!-- Fecha o cartão de registro de saída -->
-
-      <div class="card">
-        <!-- Abre o cartão da lista de veículos no pátio -->
-        <h2>Veículos no pátio</h2>
-        <!-- Título do cartão -->
-        <table id="tabelaPatio">
-          <!-- Abre a tabela de veículos no pátio -->
-          <thead><tr><th>Placa</th><th>Marca/Modelo</th><th>Vaga</th><th>Entrada</th><th>Cobrança</th></tr></thead>
-          <!-- Cabeçalho da tabela -->
-          <tbody></tbody>
-          <!-- Corpo preenchido dinamicamente via JavaScript -->
-        </table>
-        <!-- Fecha a tabela de veículos -->
-      </div>
-      <!-- Fecha o cartão da lista de veículos -->
-    </div>
-    <!-- Fecha a aba "Mapa de Vagas" -->
-
-    <!-- ===================== ABA: CLIENTES ===================== -->
-    <div class="tab" id="tab-clientes">
-      <!-- Abre a aba "Clientes" (escondida até ser selecionada) -->
-      <h1 class="page-title">Clientes</h1>
-      <!-- Título da página -->
-      <p class="page-sub">Cadastro de clientes do estacionamento.</p>
-      <!-- Subtítulo explicativo -->
-      <div class="card">
-        <!-- Abre o cartão de formulário de cliente -->
-        <h2 id="clienteFormTitulo">Novo Cliente</h2>
-        <!-- Título dinâmico do formulário -->
-        <input type="hidden" id="clienteId">
-        <!-- Campo oculto com o ID do cliente em edição -->
-        <div class="row">
-          <!-- Abre a primeira linha de campos -->
-          <div><label>Nome</label><input id="clienteNome"></div>
-          <!-- Campo: nome -->
-          <div><label>CPF</label><input id="clienteCpf"></div>
-          <!-- Campo: CPF -->
-          <div><label>Telefone</label><input id="clienteTelefone"></div>
-          <!-- Campo: telefone -->
-          <div><label>Email</label><input id="clienteEmail"></div>
-          <!-- Campo: email -->
-        </div>
-        <!-- Fecha a linha de campos -->
-        <button class="btn" onclick="salvarCliente()">Salvar</button>
-        <!-- Botão que dispara salvarCliente() -->
-        <button class="btn secondary" onclick="limparFormCliente()">Cancelar</button>
-        <!-- Botão que dispara limparFormCliente() -->
-      </div>
-      <!-- Fecha o cartão de formulário de cliente -->
-      <div class="card">
-        <!-- Abre o cartão da lista de clientes -->
-        <h2>Clientes cadastrados</h2>
-        <!-- Título do cartão -->
-        <div class="row"><div><input id="buscaCliente" placeholder="Buscar por nome ou CPF" oninput="carregarClientes()"></div></div>
-        <!-- Campo de busca que recarrega a lista a cada tecla -->
-        <table>
-          <!-- Abre a tabela de clientes -->
-          <thead><tr><th>Nome</th><th>CPF</th><th>Telefone</th><th>Email</th><th></th></tr></thead>
-          <!-- Cabeçalho da tabela -->
-          <tbody id="tabelaClientes"></tbody>
-          <!-- Corpo preenchido dinamicamente via JavaScript -->
-        </table>
-        <!-- Fecha a tabela de clientes -->
-      </div>
-      <!-- Fecha o cartão da lista de clientes -->
-    </div>
-    <!-- Fecha a aba "Clientes" -->
-
-    <!-- ===================== ABA: VEÍCULOS ===================== -->
-    <div class="tab" id="tab-veiculos">
-      <!-- Abre a aba "Veículos" -->
-      <h1 class="page-title">Veículos</h1>
-      <!-- Título da página -->
-      <p class="page-sub">Cadastro de veículos vinculados aos clientes.</p>
-      <!-- Subtítulo explicativo -->
-      <div class="card">
-        <!-- Abre o cartão de formulário de veículo -->
-        <h2 id="veiculoFormTitulo">Novo Veículo</h2>
-        <!-- Título dinâmico do formulário -->
-        <input type="hidden" id="veiculoId">
-        <!-- Campo oculto com o ID do veículo em edição -->
-        <div class="row">
-          <!-- Abre a primeira linha de campos -->
-          <div><label>Placa</label><input id="veiculoPlaca"></div>
-          <!-- Campo: placa -->
-          <div>
-            <!-- Campo: cliente vinculado -->
-            <label>Cliente</label>
-            <select id="veiculoCliente"><option value="">-- sem cliente --</option></select>
-            <!-- Lista preenchida dinamicamente com os clientes cadastrados -->
+          <div class="card">
+            <div class="section-title" style="margin-top:0;"><h4>Ocupação por tipo</h4><span class="hint"></span></div>
+            <div id="occByType"></div>
           </div>
-          <!-- Fecha o campo de cliente -->
-          <div><label>Marca</label><input id="veiculoMarca"></div>
-          <!-- Campo: marca -->
-          <div><label>Modelo</label><input id="veiculoModelo"></div>
-          <!-- Campo: modelo -->
         </div>
-        <!-- Fecha a primeira linha de campos -->
-        <div class="row">
-          <!-- Abre a segunda linha de campos -->
-          <div><label>Cor</label><input id="veiculoCor"></div>
-          <!-- Campo: cor -->
+      </section>
+
+      <!-- ===================== MAPA DE VAGAS ===================== -->
+      <section class="view" id="view-vagas">
+        <div class="page-head">
           <div>
-            <!-- Campo: tipo de veículo -->
-            <label>Tipo</label>
-            <select id="veiculoTipo">
-              <!-- Abre a lista suspensa de tipo -->
-              <option value="carro">Carro</option>
-              <!-- Opção: carro -->
-              <option value="moto">Moto</option>
-              <!-- Opção: moto -->
-              <option value="eletrico">Elétrico</option>
-              <!-- Opção: elétrico -->
-            </select>
-            <!-- Fecha a lista suspensa -->
+            <h3>Mapa de vagas</h3>
+            <p>Layout do pátio em tempo real. Clique numa vaga livre para iniciar uma entrada ou numa ocupada para ver o registro.</p>
           </div>
-          <!-- Fecha o campo de tipo -->
+          <div class="head-actions">
+            <button class="btn btn-primary" id="btnNovaEntradaVagas">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+              Nova entrada
+            </button>
+          </div>
+        </div>
+        <div class="lot-legend">
+          <span><i style="background:transparent;border:1.5px dashed #2E4A3E;"></i> Livre</span>
+          <span><i style="background:var(--surface-2);border:1px solid var(--red);"></i> Ocupada</span>
+          <span><i style="background:#2A2410;"></i> Manutenção / interditada</span>
+          <span><i style="background:var(--blue-dim);"></i> PCD / Idoso</span>
+        </div>
+        <div id="lotContainer"></div>
+      </section>
+
+      <!-- ===================== ENTRADA / SAÍDA ===================== -->
+      <section class="view" id="view-movimentacao">
+        <div class="page-head">
           <div>
-            <!-- Campo: tamanho -->
-            <label>Tamanho</label>
-            <select id="veiculoTamanho">
-              <!-- Abre a lista suspensa de tamanho -->
-              <option value="pequeno">Pequeno</option>
-              <!-- Opção: pequeno -->
-              <option value="medio" selected>Médio</option>
-              <!-- Opção: médio, selecionada por padrão -->
-              <option value="grande">Grande</option>
-              <!-- Opção: grande -->
-            </select>
-            <!-- Fecha a lista suspensa -->
+            <h3>Entrada &amp; saída</h3>
+            <p>Controle de placas ativo no pátio e histórico de movimentações encerradas.</p>
           </div>
-          <!-- Fecha o campo de tamanho -->
-          <div><label>Ano</label><input id="veiculoAno" type="number"></div>
-          <!-- Campo numérico: ano do veículo -->
+          <div class="head-actions">
+            <button class="btn btn-primary" id="btnNovaEntradaMov">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+              Nova entrada
+            </button>
+          </div>
         </div>
-        <!-- Fecha a segunda linha de campos -->
-        <button class="btn" onclick="salvarVeiculo()">Salvar</button>
-        <!-- Botão que dispara salvarVeiculo() -->
-        <button class="btn secondary" onclick="limparFormVeiculo()">Cancelar</button>
-        <!-- Botão que dispara limparFormVeiculo() -->
-      </div>
-      <!-- Fecha o cartão de formulário de veículo -->
-      <div class="card">
-        <!-- Abre o cartão da lista de veículos -->
-        <h2>Veículos cadastrados</h2>
-        <!-- Título do cartão -->
-        <div class="row"><div><input id="buscaVeiculo" placeholder="Buscar por placa ou cliente" oninput="carregarVeiculos()"></div></div>
-        <!-- Campo de busca que recarrega a lista a cada tecla -->
-        <table>
-          <!-- Abre a tabela de veículos -->
-          <thead><tr><th>Placa</th><th>Cliente</th><th>Marca/Modelo</th><th>Tipo</th><th></th></tr></thead>
-          <!-- Cabeçalho da tabela -->
-          <tbody id="tabelaVeiculos"></tbody>
-          <!-- Corpo preenchido dinamicamente via JavaScript -->
-        </table>
-        <!-- Fecha a tabela de veículos -->
-      </div>
-      <!-- Fecha o cartão da lista de veículos -->
-    </div>
-    <!-- Fecha a aba "Veículos" -->
 
-    <!-- ===================== ABA: VAGAS ===================== -->
-    <div class="tab" id="tab-vagas">
-      <!-- Abre a aba "Vagas" -->
-      <h1 class="page-title">Vagas</h1>
-      <!-- Título da página -->
-      <p class="page-sub">Cadastro e administração das vagas do estacionamento.</p>
-      <!-- Subtítulo explicativo -->
-      <div class="card">
-        <!-- Abre o cartão de formulário de vaga -->
-        <h2 id="vagaFormTitulo">Nova Vaga</h2>
-        <!-- Título dinâmico do formulário -->
-        <input type="hidden" id="vagaId">
-        <!-- Campo oculto com o ID da vaga em edição -->
-        <div class="row">
-          <!-- Abre a linha de campos -->
-          <div><label>Número</label><input id="vagaNumero"></div>
-          <!-- Campo: número da vaga -->
+        <div class="filter-chips" id="movTabs" style="margin-bottom:16px;">
+          <button class="chip active" data-movtab="ativos">No pátio agora</button>
+          <button class="chip" data-movtab="historico">Histórico</button>
+        </div>
+
+        <div id="movAtivosWrap">
+          <div class="table-wrap"><table>
+            <thead><tr><th>Placa</th><th>Veículo</th><th>Vaga</th><th>Entrada</th><th>Tempo</th><th>Cobrança</th><th>Valor parcial</th><th></th></tr></thead>
+            <tbody id="ativosBody"></tbody>
+          </table></div>
+        </div>
+
+        <div id="movHistoricoWrap" style="display:none;">
+          <div class="toolbar">
+            <div class="search-box" style="width:260px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+              <input id="histSearch" placeholder="Buscar placa no histórico" />
+            </div>
+          </div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Placa</th><th>Vaga</th><th>Entrada</th><th>Saída</th><th>Duração</th><th>Cobrança</th><th>Valor</th></tr></thead>
+            <tbody id="histBody"></tbody>
+          </table></div>
+        </div>
+      </section>
+
+      <!-- ===================== VEÍCULOS ===================== -->
+      <section class="view" id="view-veiculos">
+        <div class="page-head">
           <div>
-            <!-- Campo: tipo de vaga -->
-            <label>Tipo</label>
-            <select id="vagaTipo">
-              <!-- Abre a lista suspensa de tipo de vaga -->
-              <option value="normal">Normal</option>
-              <!-- Opção: normal -->
-              <option value="preferencial">Preferencial</option>
-              <!-- Opção: preferencial -->
-              <option value="idoso">Idoso</option>
-              <!-- Opção: idoso -->
-              <option value="moto">Moto</option>
-              <!-- Opção: moto -->
-              <option value="eletrico">Elétrico</option>
-              <!-- Opção: elétrico -->
-            </select>
-            <!-- Fecha a lista suspensa -->
+            <h3>Veículos</h3>
+            <p>Cadastro de veículos: marca, modelo, cor, tipo, porte e ano.</p>
           </div>
-          <!-- Fecha o campo de tipo -->
-          <div><label>Setor</label><input id="vagaSetor" placeholder="Ex: Setor A"></div>
-          <!-- Campo: setor da vaga -->
+          <div class="head-actions">
+            <button class="btn btn-primary" id="btnNovoVeiculo">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+              Novo veículo
+            </button>
+          </div>
         </div>
-        <!-- Fecha a linha de campos -->
-        <button class="btn" onclick="salvarVaga()">Salvar</button>
-        <!-- Botão que dispara salvarVaga() -->
-        <button class="btn secondary" onclick="limparFormVaga()">Cancelar</button>
-        <!-- Botão que dispara limparFormVaga() -->
-      </div>
-      <!-- Fecha o cartão de formulário de vaga -->
-      <div class="card">
-        <!-- Abre o cartão da lista de vagas -->
-        <h2>Vagas cadastradas</h2>
-        <!-- Título do cartão -->
-        <div class="row">
-          <!-- Abre a linha de filtros -->
+        <div class="toolbar">
+          <div class="search-box" style="width:260px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+            <input id="vecSearch" placeholder="Buscar placa, marca, modelo..." />
+          </div>
+          <select id="vecFilterTipo">
+            <option value="">Todos os tipos</option>
+            <option>Carro</option><option>SUV/Caminhonete</option><option>Moto</option><option>Utilitário/Van</option><option>Caminhão</option>
+          </select>
+          <div class="toolbar-spacer"></div>
+          <span class="hint" style="color:var(--steel);font-size:12px;" id="vecCount"></span>
+        </div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Placa</th><th>Veículo</th><th>Cor</th><th>Tipo</th><th>Porte</th><th>Ano</th><th>Proprietário</th><th></th></tr></thead>
+          <tbody id="veiculosBody"></tbody>
+        </table></div>
+      </section>
+
+      <!-- ===================== CLIENTES ===================== -->
+      <section class="view" id="view-clientes">
+        <div class="page-head">
           <div>
-            <!-- Filtro: status -->
-            <label>Filtrar status</label>
-            <select id="filtroVagaStatus" onchange="carregarVagas()">
-              <!-- Ao trocar, recarrega a tabela automaticamente -->
-              <option value="">Todas</option>
-              <!-- Opção: todas -->
-              <option value="livre">Livre</option>
-              <!-- Opção: livre -->
-              <option value="ocupada">Ocupada</option>
-              <!-- Opção: ocupada -->
-            </select>
-            <!-- Fecha a lista suspensa de status -->
+            <h3>Clientes</h3>
+            <p>Cadastro de clientes avulsos, mensalistas e anuais.</p>
           </div>
-          <!-- Fecha o filtro de status -->
+          <div class="head-actions">
+            <button class="btn btn-primary" id="btnNovoCliente">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+              Novo cliente
+            </button>
+          </div>
+        </div>
+        <div class="toolbar">
+          <div class="search-box" style="width:260px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+            <input id="cliSearch" placeholder="Buscar nome, CPF, telefone..." />
+          </div>
+          <select id="cliFilterTipo">
+            <option value="">Todos os planos</option>
+            <option>Avulso</option><option>Mensalista</option><option>Anual</option>
+          </select>
+          <div class="toolbar-spacer"></div>
+          <span class="hint" style="color:var(--steel);font-size:12px;" id="cliCount"></span>
+        </div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Cliente</th><th>CPF</th><th>Telefone</th><th>Plano</th><th>Veículos</th><th>Desde</th><th></th></tr></thead>
+          <tbody id="clientesBody"></tbody>
+        </table></div>
+      </section>
+
+      <!-- ===================== TARIFAS ===================== -->
+      <section class="view" id="view-tarifas">
+        <div class="page-head">
           <div>
-            <!-- Filtro: tipo -->
-            <label>Filtrar tipo</label>
-            <select id="filtroVagaTipo" onchange="carregarVagas()">
-              <!-- Ao trocar, recarrega a tabela automaticamente -->
-              <option value="">Todos</option>
-              <!-- Opção: todos -->
-              <option value="normal">Normal</option>
-              <!-- Opção: normal -->
-              <option value="preferencial">Preferencial</option>
-              <!-- Opção: preferencial -->
-              <option value="idoso">Idoso</option>
-              <!-- Opção: idoso -->
-              <option value="moto">Moto</option>
-              <!-- Opção: moto -->
-              <option value="eletrico">Elétrico</option>
-              <!-- Opção: elétrico -->
-            </select>
-            <!-- Fecha a lista suspensa de tipo -->
+            <h3>Tarifas</h3>
+            <p>Valores cobrados por período e tolerância de permanência gratuita.</p>
           </div>
-          <!-- Fecha o filtro de tipo -->
         </div>
-        <!-- Fecha a linha de filtros -->
-        <table>
-          <!-- Abre a tabela de vagas -->
-          <thead><tr><th>Número</th><th>Tipo</th><th>Setor</th><th>Status</th><th></th></tr></thead>
-          <!-- Cabeçalho da tabela -->
-          <tbody id="tabelaVagas"></tbody>
-          <!-- Corpo preenchido dinamicamente via JavaScript -->
-        </table>
-        <!-- Fecha a tabela de vagas -->
-      </div>
-      <!-- Fecha o cartão da lista de vagas -->
-    </div>
-    <!-- Fecha a aba "Vagas" -->
+        <div class="grid grid-4" id="tarifaCards"></div>
 
-    <!-- ===================== ABA: TARIFAS ===================== -->
-    <div class="tab" id="tab-tarifas">
-      <!-- Abre a aba "Tarifas" -->
-      <h1 class="page-title">Tarifas</h1>
-      <!-- Título da página -->
-      <p class="page-sub">Valores de cobrança por tipo de veículo.</p>
-      <!-- Subtítulo explicativo -->
-      <div class="card">
-        <!-- Abre o cartão de formulário de tarifa -->
-        <h2 id="tarifaFormTitulo">Nova Tarifa</h2>
-        <!-- Título dinâmico do formulário -->
-        <input type="hidden" id="tarifaId">
-        <!-- Campo oculto com o ID da tarifa em edição -->
-        <div class="row">
-          <!-- Abre a linha de campos -->
-          <div><label>Tipo de veículo</label><input id="tarifaTipoVeiculo" placeholder="carro / moto / eletrico"></div>
-          <!-- Campo: tipo de veículo da tarifa -->
-          <div><label>Valor Hora (R$)</label><input id="tarifaHora" type="number" step="0.01"></div>
-          <!-- Campo numérico: valor por hora (aceita centavos) -->
-          <div><label>Valor Diária (R$)</label><input id="tarifaDiaria" type="number" step="0.01"></div>
-          <!-- Campo numérico: valor por diária -->
-          <div><label>Valor Mensal (R$)</label><input id="tarifaMensal" type="number" step="0.01"></div>
-          <!-- Campo numérico: valor mensal -->
-          <div><label>Valor Anual (R$)</label><input id="tarifaAnual" type="number" step="0.01"></div>
-          <!-- Campo numérico: valor anual -->
+        <div class="section-title"><h4>Editar tabela de preços</h4><span class="hint">alterações valem para novas entradas</span></div>
+        <div class="card" style="max-width:640px;">
+          <div class="field-row">
+            <div class="field"><label>Valor por hora (R$)</label><input type="number" step="0.5" id="tarifaHora"></div>
+            <div class="field"><label>Fração adicional / hora (R$)</label><input type="number" step="0.5" id="tarifaFracao"></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>Diária (R$)</label><input type="number" step="1" id="tarifaDiaria"></div>
+            <div class="field"><label>Mensalista (R$/mês)</label><input type="number" step="1" id="tarifaMensal"></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>Plano anual (R$/ano)</label><input type="number" step="1" id="tarifaAnual"></div>
+            <div class="field"><label>Tolerância gratuita (minutos)</label><input type="number" step="1" id="tarifaTolerancia"></div>
+          </div>
+          <button class="btn btn-primary" id="btnSalvarTarifas">Salvar tabela de preços</button>
         </div>
-        <!-- Fecha a linha de campos -->
-        <button class="btn" onclick="salvarTarifa()">Salvar</button>
-        <!-- Botão que dispara salvarTarifa() -->
-        <button class="btn secondary" onclick="limparFormTarifa()">Cancelar</button>
-        <!-- Botão que dispara limparFormTarifa() -->
-      </div>
-      <!-- Fecha o cartão de formulário de tarifa -->
-      <div class="card">
-        <!-- Abre o cartão da lista de tarifas -->
-        <h2>Tarifas cadastradas</h2>
-        <!-- Título do cartão -->
-        <table>
-          <!-- Abre a tabela de tarifas -->
-          <thead><tr><th>Tipo veículo</th><th>Hora</th><th>Diária</th><th>Mensal</th><th>Anual</th><th></th></tr></thead>
-          <!-- Cabeçalho da tabela -->
-          <tbody id="tabelaTarifas"></tbody>
-          <!-- Corpo preenchido dinamicamente via JavaScript -->
-        </table>
-        <!-- Fecha a tabela de tarifas -->
-      </div>
-      <!-- Fecha o cartão da lista de tarifas -->
-    </div>
-    <!-- Fecha a aba "Tarifas" -->
+      </section>
 
-    <!-- ===================== ABA: RELATÓRIOS ===================== -->
-    <div class="tab" id="tab-relatorios">
-      <!-- Abre a aba "Relatórios" -->
-      <h1 class="page-title">Relatórios</h1>
-      <!-- Título da página -->
-      <p class="page-sub">Indicadores de ocupação, faturamento e histórico de clientes.</p>
-      <!-- Subtítulo explicativo -->
-
-      <div class="card">
-        <!-- Abre o cartão de ocupação -->
-        <h2>Ocupação</h2>
-        <!-- Título do cartão -->
-        <button class="btn secondary" onclick="carregarOcupacao()">Atualizar</button>
-        <!-- Botão que recarrega os dados de ocupação -->
-        <div class="grid-stats" id="statsOcupacao" style="margin-top:14px;"></div>
-        <!-- Cartões de estatística preenchidos via JavaScript -->
-        <table id="tabelaOcupacaoTipo" style="margin-top:16px;">
-          <!-- Abre a tabela de ocupação por tipo -->
-          <thead><tr><th>Tipo</th><th>Total</th><th>Ocupadas</th><th>Livres</th></tr></thead>
-          <!-- Cabeçalho da tabela -->
-          <tbody></tbody>
-          <!-- Corpo preenchido dinamicamente via JavaScript -->
-        </table>
-        <!-- Fecha a tabela de ocupação por tipo -->
-      </div>
-      <!-- Fecha o cartão de ocupação -->
-
-      <div class="card">
-        <!-- Abre o cartão de faturamento -->
-        <h2>Faturamento</h2>
-        <!-- Título do cartão -->
-        <div class="row">
-          <!-- Abre a linha de filtros de data -->
-          <div><label>Data início</label><input type="date" id="fatInicio"></div>
-          <!-- Campo de data inicial -->
-          <div><label>Data fim</label><input type="date" id="fatFim"></div>
-          <!-- Campo de data final -->
-          <div style="display:flex; align-items:flex-end;"><button class="btn" onclick="carregarFaturamento()">Consultar</button></div>
-          <!-- Botão alinhado à base da linha, que dispara carregarFaturamento() -->
-        </div>
-        <!-- Fecha a linha de filtros -->
-        <div class="grid-stats" id="statsFaturamento"></div>
-        <!-- Cartões de estatística de faturamento preenchidos via JavaScript -->
-        <table id="tabelaFaturamentoTipo" style="margin-top:16px;">
-          <!-- Abre a tabela de faturamento por tipo de cobrança -->
-          <thead><tr><th>Tipo cobrança</th><th>Qtd</th><th>Total (R$)</th></tr></thead>
-          <!-- Cabeçalho da tabela -->
-          <tbody></tbody>
-          <!-- Corpo preenchido dinamicamente via JavaScript -->
-        </table>
-        <!-- Fecha a tabela de faturamento -->
-      </div>
-      <!-- Fecha o cartão de faturamento -->
-
-      <div class="card">
-        <!-- Abre o cartão de histórico por cliente -->
-        <h2>Histórico por Cliente</h2>
-        <!-- Título do cartão -->
-        <div class="row">
-          <!-- Abre a linha de seleção de cliente -->
+      <!-- ===================== RELATÓRIOS ===================== -->
+      <section class="view" id="view-relatorios">
+        <div class="page-head">
           <div>
-            <!-- Campo: cliente -->
-            <label>Cliente</label>
-            <select id="historicoCliente"></select>
-            <!-- Lista preenchida dinamicamente com os clientes -->
+            <h3>Relatórios</h3>
+            <p>Indicadores operacionais e financeiros do estacionamento.</p>
           </div>
-          <!-- Fecha o campo de cliente -->
-          <div style="display:flex; align-items:flex-end;"><button class="btn" onclick="carregarHistoricoCliente()">Consultar</button></div>
-          <!-- Botão que dispara carregarHistoricoCliente() -->
+          <div class="head-actions">
+            <button class="btn" id="btnExportarCsv">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 21h16"/></svg>
+              Exportar histórico (CSV)
+            </button>
+          </div>
         </div>
-        <!-- Fecha a linha de seleção -->
-        <table>
-          <!-- Abre a tabela de histórico -->
-          <thead><tr><th>Placa</th><th>Marca/Modelo</th><th>Entrada</th><th>Saída</th><th>Valor</th><th>Status</th></tr></thead>
-          <!-- Cabeçalho da tabela -->
-          <tbody id="tabelaHistorico"></tbody>
-          <!-- Corpo preenchido dinamicamente via JavaScript -->
-        </table>
-        <!-- Fecha a tabela de histórico -->
-      </div>
-      <!-- Fecha o cartão de histórico por cliente -->
-    </div>
-    <!-- Fecha a aba "Relatórios" -->
 
-  </main>
-  <!-- Fecha a área principal de conteúdo -->
+        <div class="grid grid-4" id="repKpis"></div>
+
+        <div class="grid grid-2" style="margin-top:22px;">
+          <div class="card">
+            <div class="section-title" style="margin-top:0;"><h4>Distribuição da frota por tipo</h4><span class="hint"></span></div>
+            <div id="repDonut"></div>
+          </div>
+          <div class="card">
+            <div class="section-title" style="margin-top:0;"><h4>Ocupação por setor</h4><span class="hint"></span></div>
+            <div id="repSectors"></div>
+          </div>
+        </div>
+
+        <div class="section-title"><h4>Faturamento por forma de cobrança (30 dias)</h4><span class="hint"></span></div>
+        <div class="card" id="repByCharge"></div>
+      </section>
+
+    </main>
+  </div>
 </div>
-<!-- Fecha o contêiner geral .app -->
 
-<div class="toast" id="toast"></div>
-<!-- Elemento único de notificação, reutilizado para todas as mensagens -->
+<div class="overlay" id="overlay">
+  <div class="modal" id="modalBox">
+    <div class="modal-head">
+      <h4 id="modalTitle">Título</h4>
+      <button class="modal-close" id="modalCloseBtn">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-foot" id="modalFoot"></div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
 
 <script>
-/* Abre a tag script: início de todo o JavaScript do documento */
+(function(){
+"use strict";
 
-const API = "http://localhost:5000/api";
-// Define a URL base da API/backend
+/* =========================================================
+   ICONS
+========================================================= */
+const ICON = {
+  dashboard:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>',
+  map:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3 3 5.5v15L9 18l6 2.5 6-2.5v-15L15 5.5 9 3Z"/><path d="M9 3v15M15 5.5v15"/></svg>',
+  swap:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m17 2 4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 22l-4-4 4-4M21 13v2a4 4 0 0 1-4 4H3"/></svg>',
+  car:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l1.6-4.8A2 2 0 0 1 6.5 6h11a2 2 0 0 1 1.9 1.2L21 12"/><rect x="2" y="12" width="20" height="6" rx="2"/><circle cx="7" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/></svg>',
+  users:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.4"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17.5" cy="9" r="2.6"/><path d="M15.7 13.3a5.4 5.4 0 0 1 5.8 5.4"/></svg>',
+  tag:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.6 12.6 12.4 20.8a2 2 0 0 1-2.8 0l-6.4-6.4a2 2 0 0 1 0-2.8L11.4 3.4A2 2 0 0 1 12.8 3H19a2 2 0 0 1 2 2v6.2a2 2 0 0 1-.4 1.4Z"/><circle cx="15.5" cy="7.5" r="1.4"/></svg>',
+  report:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 3h10a2 2 0 0 1 2 2v14l-3-2-3 2-3-2-3 2V5a2 2 0 0 1 2-2Z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>',
+  revenue:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 6.5c0-1.9-2.2-3.5-5-3.5S7 4.6 7 6.5 9.2 10 12 10s5 1.6 5 3.5-2.2 3.5-5 3.5-5-1.6-5-3.5"/></svg>',
+  occ:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M8 4v6"/></svg>',
+  clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>',
+  free:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m9 12 2 2 4-4"/></svg>',
+  plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>',
+  edit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
+  trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-.9 14a2 2 0 0 1-2 1.9H7.9a2 2 0 0 1-2-1.9L5 6"/></svg>',
+  exit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>',
+  info:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v5h1"/></svg>',
+  warn:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 3.9 1.9 18a1.5 1.5 0 0 0 1.3 2.2h17.6a1.5 1.5 0 0 0 1.3-2.2L13.7 3.9a1.5 1.5 0 0 0-2.6 0Z"/><path d="M12 9v4m0 4h.01"/></svg>',
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>',
+};
 
-let vagaSelecionada = null;
-// Variável global que guarda a vaga escolhida no mapa (ou null)
+/* =========================================================
+   ESTADO (em memória)
+========================================================= */
+const NAV = [
+  {group:'Operação', items:[
+    {id:'dashboard', label:'Visão geral', icon:'dashboard'},
+    {id:'vagas', label:'Mapa de vagas', icon:'map'},
+    {id:'movimentacao', label:'Entrada / Saída', icon:'swap'},
+  ]},
+  {group:'Cadastros', items:[
+    {id:'veiculos', label:'Veículos', icon:'car'},
+    {id:'clientes', label:'Clientes', icon:'users'},
+    {id:'tarifas', label:'Tarifas', icon:'tag'},
+  ]},
+  {group:'Análise', items:[
+    {id:'relatorios', label:'Relatórios', icon:'report'},
+  ]},
+];
 
-function toast(msg, isError=false){
-  // Abre a função utilitária de notificação; isError=false é o valor padrão
-  const t = document.getElementById("toast");
-  // Referência do elemento de notificação
-  t.textContent = msg;
-  // Define o texto da mensagem
-  t.className = "toast " + (isError ? "error" : "success");
-  // Aplica a classe conforme o tipo de mensagem
-  t.style.display = "block";
-  // Torna a notificação visível
-  setTimeout(()=> t.style.display = "none", 3500);
-  // Agenda o fechamento automático após 3.5 segundos
-}
-// Fecha a função toast()
+const TARIFAS = { hora:8, fracao:6, diaria:45, mensal:320, anual:2900, tolerancia:15 };
 
-async function api(path, options={}){
-  // Abre a função central de chamadas à API; options={} é o valor padrão
-  try{
-    // Abre o bloco try, que tenta executar a requisição
-    const res = await fetch(API + path, {
-      // Monta a requisição HTTP com a URL completa
-      headers: {"Content-Type": "application/json"},
-      // Cabeçalho informando que o corpo é JSON
-      ...options
-      // Mescla opções adicionais (método, body) passadas pela chamada
-    });
-    // Fecha a chamada fetch
-    const data = await res.json().catch(()=> ({}));
-    // Converte a resposta em JSON; usa objeto vazio se falhar
-    if(!res.ok){
-      // Abre a verificação de erro HTTP
-      toast(data.erro || "Erro na requisição.", true);
-      // Mostra a mensagem de erro
-      return null;
-      // Retorna null indicando falha
+const TIPOS_VAGA = {
+  'Normal':      {vehicleTypes:['Carro','SUV/Caminhonete','Utilitário/Van'], color:'var(--paper)'},
+  'Preferencial':{vehicleTypes:['Carro','SUV/Caminhonete','Utilitário/Van'], color:'var(--blue)', badge:'PCD'},
+  'Idoso':       {vehicleTypes:['Carro','SUV/Caminhonete','Utilitário/Van'], color:'var(--blue)', badge:'IDOSO'},
+  'Moto':        {vehicleTypes:['Moto'], color:'var(--paper)'},
+  'Grande':      {vehicleTypes:['Caminhão','Utilitário/Van','SUV/Caminhonete'], color:'var(--paper)'},
+};
+
+let SPOTS = [];      // {id, setor, numero, tipo, status, manut}
+let CLIENTS = [];     // {id, nome, cpf, telefone, email, plano, desde}
+let VEHICLES = [];    // {id, placa, marca, modelo, cor, tipo, porte, ano, clienteId}
+let MOVES = [];       // {id, placa, veiculoId, vagaId, entrada(Date), saida(Date|null), cobranca, valor}
+let seq = {spot:1, client:1, vehicle:1, move:1};
+
+function uid(kind){ return kind+'_'+(seq[kind]++); }
+
+function seed(){
+  // vagas: setor A normal x20, setor B preferencial/idoso x6, setor C moto x10, setor D grande x5
+  let n=1;
+  for(let i=0;i<20;i++) SPOTS.push({id:uid('spot'),setor:'A',numero:'A'+String(++n>20?n:i+1).padStart(2,'0'),tipo:'Normal',status:'livre',manut:false});
+  n=0;
+  const especiais = ['Preferencial','Preferencial','Preferencial','Idoso','Idoso','Idoso'];
+  especiais.forEach((t,i)=> SPOTS.push({id:uid('spot'),setor:'B',numero:'B'+String(i+1).padStart(2,'0'),tipo:t,status:'livre',manut:false}));
+  for(let i=0;i<10;i++) SPOTS.push({id:uid('spot'),setor:'C',numero:'C'+String(i+1).padStart(2,'0'),tipo:'Moto',status:'livre',manut:false});
+  for(let i=0;i<5;i++) SPOTS.push({id:uid('spot'),setor:'D',numero:'D'+String(i+1).padStart(2,'0'),tipo:'Grande',status:'livre',manut:false});
+  // fix A numbering properly
+  SPOTS.filter(s=>s.setor==='A').forEach((s,i)=>{ s.numero='A'+String(i+1).padStart(2,'0'); });
+  // marcar 2 em manutenção
+  SPOTS.find(s=>s.numero==='A05').manut = true;
+  SPOTS.find(s=>s.numero==='C08').manut = true;
+
+  const clientesSeed = [
+    ['Marina Alves Ferreira','347.221.980-05','(41) 99811-2234','marina.af@gmail.com','Mensalista'],
+    ['João Pedro Kowalski','512.006.774-31','(41) 98722-5510','jp.kowalski@outlook.com','Avulso'],
+    ['Estúdio Vértice Arquitetura','—','(41) 3022-8871','contato@verticearq.com.br','Anual'],
+    ['Helena Bittencourt','229.884.115-60','(41) 99655-0912','helena.bit@gmail.com','Mensalista'],
+    ['Rafael Nakashima','670.113.442-08','(41) 98411-7789','rafa.naka@hotmail.com','Avulso'],
+    ['Transportes Rota Sul Ltda','—','(41) 3345-1120','operacoes@rotasul.com.br','Mensalista'],
+    ['Camila Duarte Souza','185.290.663-77','(41) 99231-4456','camiladuarte@gmail.com','Avulso'],
+  ];
+  clientesSeed.forEach((c,i)=>{
+    CLIENTS.push({id:uid('client'),nome:c[0],cpf:c[1],telefone:c[2],email:c[3],plano:c[4],desde:offsetDate(-(30+i*11))});
+  });
+
+  const vehSeed = [
+    ['PGT4E12','Volkswagen','Polo','Prata','Carro','Médio',2022, CLIENTS[0].id],
+    ['BRC9910','Fiat','Toro','Cinza','SUV/Caminhonete','Grande',2021, CLIENTS[0].id],
+    ['QWE2A45','Honda','CG 160','Vermelha','Moto','Pequeno',2023, CLIENTS[1].id],
+    ['RST7788','Toyota','Corolla','Preto','Carro','Médio',2020, null],
+    ['LMX3C09','Renault','Master','Branca','Utilitário/Van','Grande',2019, CLIENTS[2].id],
+    ['ABC1D23','Chevrolet','Onix','Branco','Carro','Médio',2023, CLIENTS[3].id],
+    ['ZYX8899','Yamaha','Fazer 250','Azul','Moto','Pequeno',2022, null],
+    ['JJK5566','Jeep','Compass','Preto','SUV/Caminhonete','Grande',2022, CLIENTS[4].id],
+    ['MNB4321','Volvo','FH 540','Vermelho','Caminhão','Grande',2018, CLIENTS[5].id],
+    ['CVB6677','Hyundai','HB20','Prata','Carro','Pequeno',2021, CLIENTS[6].id],
+    ['TYU2244','Fiat','Strada','Branca','SUV/Caminhonete','Médio',2020, null],
+    ['OIU9911','Honda','Civic','Cinza','Carro','Médio',2023, null],
+  ];
+  vehSeed.forEach(v=>{
+    VEHICLES.push({id:uid('vehicle'),placa:v[0],marca:v[1],modelo:v[2],cor:v[3],tipo:v[4],porte:v[5],ano:v[6],clienteId:v[7]});
+  });
+
+  // histórico (últimos 7 dias) finalizados
+  for(let d=6; d>=1; d--){
+    const count = 3 + Math.floor(Math.random()*4);
+    for(let i=0;i<count;i++){
+      const veh = VEHICLES[Math.floor(Math.random()*VEHICLES.length)];
+      const entrada = offsetDate(-d, 8+Math.floor(Math.random()*9));
+      const minutos = 25 + Math.floor(Math.random()*400);
+      const saida = new Date(entrada.getTime()+minutos*60000);
+      const cobranca = clienteCobrancaPadrao(veh.clienteId);
+      const valor = calcularValor(entrada, saida, cobranca);
+      MOVES.push({id:uid('move'),placa:veh.placa,veiculoId:veh.id,vagaId:null,entrada,saida,cobranca,valor,status:'finalizado'});
     }
-    // Fecha a verificação de erro
-    return data;
-    // Retorna os dados em caso de sucesso
-  }catch(e){
-    // Abre o bloco catch, para falhas de rede
-    toast("Falha ao conectar com o servidor.", true);
-    // Notifica o usuário sobre a falha de conexão
-    document.getElementById("statusApi").textContent = "servidor indisponível";
-    // Atualiza o texto de status
-    document.getElementById("statusDot").className = "dot off";
-    // Marca a bolinha de status como desligada
-    return null;
-    // Retorna null indicando falha
   }
-  // Fecha o bloco catch
-}
-// Fecha a função api()
 
-// ---------- Navegação lateral ----------
-document.querySelectorAll(".side-btn").forEach(btn => {
-  // Percorre todos os botões do menu lateral
-  btn.addEventListener("click", () => {
-    // Adiciona o ouvinte de clique em cada botão
-    document.querySelectorAll(".side-btn").forEach(b => b.classList.remove("active"));
-    // Remove a classe "active" de todos os botões
-    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-    // Esconde todas as abas de conteúdo
-    btn.classList.add("active");
-    // Marca o botão clicado como ativo
-    document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
-    // Exibe a aba correspondente ao botão clicado
-    carregarAba(btn.dataset.tab);
-    // Busca os dados daquela aba na API
+  // ativos agora — ocupar algumas vagas compatíveis
+  const ativarPlacas = ['PGT4E12','QWE2A45','ABC1D23','MNB4321','JJK5566','ZYX8899','TYU2244'];
+  ativarPlacas.forEach(pl=>{
+    const veh = VEHICLES.find(v=>v.placa===pl);
+    const vaga = pickFreeSpotFor(veh.tipo);
+    if(!vaga) return;
+    vaga.status='ocupado';
+    const entrada = offsetDate(0, -(1+Math.random()*4));
+    const cobranca = clienteCobrancaPadrao(veh.clienteId);
+    MOVES.push({id:uid('move'),placa:veh.placa,veiculoId:veh.id,vagaId:vaga.id,entrada,saida:null,cobranca,valor:0,status:'ativo'});
   });
-  // Fecha a função do ouvinte de clique
-});
-// Fecha o forEach dos botões
-
-function carregarAba(nome){
-  // Abre a função que decide quais dados buscar por aba
-  if(nome === "patio"){ carregarMapaVagas(); carregarPatio(); }
-  // Se for a aba "patio": carrega o mapa e a lista de veículos
-  if(nome === "clientes"){ carregarClientes(); }
-  // Se for a aba "clientes": carrega a lista de clientes
-  if(nome === "veiculos"){ carregarClientesSelect(); carregarVeiculos(); }
-  // Se for a aba "veiculos": carrega o select de clientes e a lista de veículos
-  if(nome === "vagas"){ carregarVagas(); }
-  // Se for a aba "vagas": carrega a lista de vagas
-  if(nome === "tarifas"){ carregarTarifas(); }
-  // Se for a aba "tarifas": carrega a lista de tarifas
-  if(nome === "relatorios"){ carregarOcupacao(); carregarClientesHistoricoSelect(); }
-  // Se for a aba "relatorios": carrega ocupação e o select de clientes
 }
-// Fecha a função carregarAba()
 
-// ---------- MAPA DE VAGAS (estilo cinema) ----------
-async function carregarMapaVagas(){
-  // Abre a função que desenha o mapa de vagas agrupado por setor
-  const vagas = await api("/vagas");
-  // Busca todas as vagas na API
-  const container = document.getElementById("mapaVagas");
-  // Referência do contêiner do mapa
-  container.innerHTML = "";
-  // Limpa o conteúdo anterior
-  if(!vagas || vagas.length === 0){
-    // Abre a verificação de lista vazia
-    container.innerHTML = `<div class="empty">Nenhuma vaga cadastrada ainda.</div>`;
-    // Exibe mensagem de estado vazio
-    return;
-    // Interrompe a função
+function offsetDate(days, hourFloat){
+  const d = new Date();
+  d.setDate(d.getDate()+days);
+  if(hourFloat!==undefined){
+    const h = Math.floor(Math.abs(hourFloat)) * (hourFloat<0?-1:1);
+    d.setHours(9,0,0,0);
+    d.setMinutes(d.getMinutes() + Math.round(hourFloat*60));
   }
-  // Fecha a verificação de lista vazia
+  return d;
+}
 
-  // agrupar por setor
-  const setores = {};
-  // Objeto que acumula as vagas por setor
-  vagas.forEach(v => {
-    // Percorre cada vaga retornada
-    const setor = v.setor && v.setor.trim() ? v.setor : "Sem setor";
-    // Usa o nome do setor ou "Sem setor" se vazio
-    if(!setores[setor]) setores[setor] = [];
-    // Cria a lista do setor na primeira ocorrência
-    setores[setor].push(v);
-    // Adiciona a vaga à lista do setor
+function clienteCobrancaPadrao(clienteId){
+  if(!clienteId) return 'Avulso';
+  const c = CLIENTS.find(c=>c.id===clienteId);
+  return c ? c.plano : 'Avulso';
+}
+
+function pickFreeSpotFor(vehTipo){
+  const compat = SPOTS.filter(s=>!s.manut && s.status==='livre' && TIPOS_VAGA[s.tipo].vehicleTypes.includes(vehTipo));
+  return compat[0] || null;
+}
+
+/* =========================================================
+   REGRAS DE COBRANÇA
+========================================================= */
+function calcularValor(entrada, saida, cobranca){
+  const minutos = Math.max(0, Math.round((saida-entrada)/60000));
+  if(minutos <= TARIFAS.tolerancia) return 0;
+  if(cobranca==='Mensalista' || cobranca==='Anual') return 0;
+  const horas = Math.ceil(minutos/60);
+  if(minutos > 12*60){
+    const dias = Math.ceil(minutos/(60*24));
+    return dias*TARIFAS.diaria;
+  }
+  const porHora = TARIFAS.hora + Math.max(0,horas-1)*TARIFAS.fracao;
+  return Math.min(porHora, TARIFAS.diaria);
+}
+
+function fmtMoney(v){ return 'R$ ' + v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtDateTime(d){ if(!d) return '—'; return d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); }
+function fmtDate(d){ return d.toLocaleDateString('pt-BR'); }
+function fmtDur(mins){
+  const h = Math.floor(mins/60), m = mins%60;
+  return (h>0? h+'h ':'') + m+'min';
+}
+function elapsedMin(entrada){ return Math.max(0,Math.round((new Date()-entrada)/60000)); }
+
+/* =========================================================
+   TOAST
+========================================================= */
+function toast(msg, ok=true){
+  const wrap = document.getElementById('toastWrap');
+  const el = document.createElement('div');
+  el.className = 'toast'+(ok?'':' err');
+  el.textContent = msg;
+  wrap.appendChild(el);
+  setTimeout(()=>{ el.style.opacity='0'; el.style.transition='opacity .25s'; setTimeout(()=>el.remove(),250); }, 3200);
+}
+
+/* =========================================================
+   MODAL
+========================================================= */
+function openModal(title, bodyHTML, footButtons){
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalBody').innerHTML = bodyHTML;
+  const foot = document.getElementById('modalFoot');
+  foot.innerHTML = '';
+  footButtons.forEach(b=>{
+    const btn = document.createElement('button');
+    btn.className = 'btn '+(b.cls||'');
+    btn.textContent = b.label;
+    btn.onclick = b.onClick;
+    foot.appendChild(btn);
   });
-  // Fecha o forEach de agrupamento
+  document.getElementById('overlay').classList.add('active');
+}
+function closeModal(){ document.getElementById('overlay').classList.remove('active'); }
+document.getElementById('modalCloseBtn').onclick = closeModal;
+document.getElementById('overlay').addEventListener('click', e=>{ if(e.target.id==='overlay') closeModal(); });
 
-  Object.keys(setores).sort().forEach(setor => {
-    // Percorre os setores em ordem alfabética
-    const bloco = document.createElement("div");
-    // Cria o elemento do bloco de setor
-    bloco.className = "setor-block";
-    // Aplica a classe de estilo
-    bloco.innerHTML = `<div class="setor-titulo">${setor}</div>`;
-    // Insere o título do setor
-    const grid = document.createElement("div");
-    // Cria o elemento da grade de vagas
-    grid.className = "vagas-grid";
-    // Aplica a classe de estilo da grade
+/* =========================================================
+   NAVEGAÇÃO
+========================================================= */
+const TITLES = {
+  dashboard:['Visão geral','Painel do estacionamento em tempo real'],
+  vagas:['Mapa de vagas','Ocupação do pátio por setor'],
+  movimentacao:['Entrada & saída','Controle de placas no pátio'],
+  veiculos:['Veículos','Cadastro da frota atendida'],
+  clientes:['Clientes','Cadastro de clientes e planos'],
+  tarifas:['Tarifas','Tabela de preços vigente'],
+  relatorios:['Relatórios','Indicadores operacionais e financeiros'],
+};
 
-    setores[setor].forEach(v => {
-      // Percorre cada vaga do setor atual
-      const seat = document.createElement("div");
-      // Cria o elemento visual da vaga
-      seat.className = "vaga-seat " + v.status;
-      // Aplica a classe base mais o status da vaga
-      seat.textContent = v.numero;
-      // Exibe o número da vaga
-      seat.title = `Vaga ${v.numero} - ${v.tipo} - ${v.status}`;
-      // Define o tooltip com detalhes da vaga
-      if(v.status === "livre"){
-        // Se a vaga estiver livre
-        seat.addEventListener("click", () => selecionarVaga(v, seat));
-        // Permite clicar para selecioná-la
-      }
-      // Fecha a verificação de vaga livre
-      grid.appendChild(seat);
-      // Adiciona a vaga à grade
+function buildNav(){
+  const nav = document.getElementById('nav');
+  nav.innerHTML = NAV.map(g=>`
+    <div class="nav-group-label">${g.group}</div>
+    ${g.items.map(it=>`
+      <div class="nav-item" data-view="${it.id}">
+        ${ICON[it.icon]}
+        <span>${it.label}</span>
+      </div>
+    `).join('')}
+  `).join('');
+  nav.querySelectorAll('.nav-item').forEach(el=>{
+    el.addEventListener('click', ()=> goto(el.dataset.view));
+  });
+}
+
+function goto(view){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+view).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active', n.dataset.view===view));
+  document.getElementById('pageTitle').textContent = TITLES[view][0];
+  document.getElementById('pageSub').textContent = TITLES[view][1];
+  renderView(view);
+  window.scrollTo(0,0);
+}
+document.querySelectorAll('[data-goto]').forEach(el=> el.addEventListener('click',()=>goto(el.dataset.goto)));
+
+function renderView(view){
+  if(view==='dashboard') renderDashboard();
+  if(view==='vagas') renderVagas();
+  if(view==='movimentacao') renderMovimentacao();
+  if(view==='veiculos') renderVeiculos();
+  if(view==='clientes') renderClientes();
+  if(view==='tarifas') renderTarifas();
+  if(view==='relatorios') renderRelatorios();
+}
+
+/* =========================================================
+   DASHBOARD
+========================================================= */
+function renderDashboard(){
+  const total = SPOTS.length;
+  const ocupadas = SPOTS.filter(s=>s.status==='ocupado').length;
+  const manut = SPOTS.filter(s=>s.manut).length;
+  const livres = total - ocupadas - manut;
+  const hojeStr = new Date().toDateString();
+  const faturamentoHoje = MOVES.filter(m=>m.status==='finalizado' && m.saida.toDateString()===hojeStr).reduce((a,m)=>a+m.valor,0);
+  const entradasHoje = MOVES.filter(m=>m.entrada.toDateString()===hojeStr).length;
+
+  document.getElementById('kpiRow').innerHTML = `
+    ${kpi('occ','Ocupação atual', Math.round(ocupadas/total*100)+'%', `${ocupadas} de ${total} vagas ocupadas`,'')}
+    ${kpi('free','Vagas livres', livres, `${manut} em manutenção`,'')}
+    ${kpi('revenue','Faturamento hoje', fmtMoney(faturamentoHoje), 'movimentações encerradas','up')}
+    ${kpi('swap','Entradas hoje', entradasHoje, 'veículos registrados','')}
+  `;
+
+  // revenue bars últimos 7 dias
+  const days = [];
+  for(let d=6; d>=0; d--){
+    const day = offsetDate(-d);
+    const total = MOVES.filter(m=>m.status==='finalizado' && m.saida.toDateString()===day.toDateString()).reduce((a,m)=>a+m.valor,0);
+    days.push({label: day.toLocaleDateString('pt-BR',{weekday:'short'}).replace('.',''), value: total});
+  }
+  const max = Math.max(1,...days.map(d=>d.value));
+  document.getElementById('revenueBars').innerHTML = days.map(d=>`
+    <div class="bar-col">
+      <span class="bv">${d.value>0? 'R$'+Math.round(d.value):''}</span>
+      <div class="bar" style="height:${Math.max(4,d.value/max*110)}px;"></div>
+      <span class="bl">${d.label}</span>
+    </div>`).join('');
+
+  // recent moves
+  const recent = [...MOVES].sort((a,b)=>b.entrada-a.entrada).slice(0,6);
+  document.getElementById('recentMoveBody').innerHTML = recent.map(m=>{
+    const vaga = SPOTS.find(s=>s.id===m.vagaId);
+    return `<tr>
+      <td class="plate">${m.placa}</td>
+      <td>${vaga? vaga.numero : '—'}</td>
+      <td>${fmtDateTime(m.entrada)}</td>
+      <td>${m.status==='ativo' ? '<span class="pill red">No pátio</span>' : '<span class="pill green">Finalizado</span>'}</td>
+      <td class="mono-cell">${m.status==='ativo'? '—' : fmtMoney(m.valor)}</td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="5" class="table-empty">Nenhuma movimentação ainda.</td></tr>`;
+
+  // occupancy by type
+  const types = Object.keys(TIPOS_VAGA);
+  const colors = {'Normal':'var(--paper)','Preferencial':'var(--blue)','Idoso':'var(--blue)','Moto':'var(--line)','Grande':'var(--green)'};
+  document.getElementById('occByType').innerHTML = types.map(t=>{
+    const spots = SPOTS.filter(s=>s.tipo===t);
+    const occ = spots.filter(s=>s.status==='ocupado').length;
+    const pct = spots.length? Math.round(occ/spots.length*100):0;
+    return `<div class="hbar-row">
+      <div class="hbar-label">${t}</div>
+      <div class="hbar-track"><div class="hbar-fill" style="width:${pct}%;background:${colors[t]};"></div></div>
+      <div class="hbar-val">${occ}/${spots.length}</div>
+    </div>`;
+  }).join('');
+}
+
+function kpi(icon,label,value,note,noteClass){
+  return `<div class="card kpi">
+    <div class="kpi-top"><span class="kpi-label">${label}</span><span class="kpi-icon">${ICON[icon]}</span></div>
+    <div class="kpi-value">${value}</div>
+    <div class="kpi-note ${noteClass}">${note}</div>
+  </div>`;
+}
+
+/* =========================================================
+   MAPA DE VAGAS
+========================================================= */
+function renderVagas(){
+  const setores = [
+    {key:'A', label:'Setor A · Vagas normais'},
+    {key:'B', label:'Setor B · Preferenciais e idosos'},
+    {key:'C', label:'Setor C · Motos'},
+    {key:'D', label:'Setor D · Veículos grandes'},
+  ];
+  document.getElementById('lotContainer').innerHTML = setores.map(s=>{
+    const items = SPOTS.filter(sp=>sp.setor===s.key);
+    const ocupadas = items.filter(sp=>sp.status==='ocupado').length;
+    return `<div class="lot-sector">
+      <div class="lot-sector-head"><h5>${s.label}</h5><span class="lot-count">${ocupadas}/${items.length} ocupadas</span></div>
+      <div class="lot-grid">
+        ${items.map(sp=>renderSpotCell(sp)).join('')}
+      </div>
+    </div>`;
+  }).join('');
+
+  document.querySelectorAll('.spot').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const sp = SPOTS.find(s=>s.id===el.dataset.id);
+      if(sp.manut){ toast('Vaga '+sp.numero+' está em manutenção.', false); return; }
+      if(sp.status==='livre') openEntradaModal(sp.id);
+      else openVagaOcupadaInfo(sp);
     });
-    // Fecha o forEach das vagas do setor
-
-    bloco.appendChild(grid);
-    // Insere a grade dentro do bloco de setor
-    container.appendChild(bloco);
-    // Insere o bloco de setor no contêiner do mapa
   });
-  // Fecha o forEach dos setores
 }
-// Fecha a função carregarMapaVagas()
 
-function selecionarVaga(v, el){
-  // Abre a função que marca a vaga escolhida
-  document.querySelectorAll(".vaga-seat.selecionada").forEach(s => s.classList.remove("selecionada"));
-  // Remove a marcação de qualquer vaga selecionada anteriormente
-  el.classList.add("selecionada");
-  // Marca a vaga clicada como selecionada
-  vagaSelecionada = v;
-  // Guarda a vaga na variável global
-  document.getElementById("entradaVaga").value = v.id;
-  // Preenche o campo oculto com o ID da vaga
-  document.getElementById("entradaVagaLabel").value = `Vaga ${v.numero} (${v.tipo})`;
-  // Preenche o campo visível com a descrição da vaga
-}
-// Fecha a função selecionarVaga()
-
-// ---------- PÁTIO ----------
-async function registrarEntrada(){
-  // Abre a função que registra a entrada de um veículo
-  const placa = document.getElementById("entradaPlaca").value.trim();
-  // Lê a placa digitada, sem espaços extras
-  const vaga_id = document.getElementById("entradaVaga").value;
-  // Lê o ID da vaga selecionada
-  const tipo_cobranca = document.getElementById("entradaCobranca").value;
-  // Lê o tipo de cobrança escolhido
-  if(!placa || !vaga_id){ toast("Informe a placa e selecione uma vaga no mapa.", true); return; }
-  // Valida se a placa e a vaga foram informadas; interrompe se não
-  const r = await api("/entrada", {method:"POST", body: JSON.stringify({placa, vaga_id, tipo_cobranca})});
-  // Envia os dados via POST para a API
-  if(r){
-    // Abre a verificação de sucesso
-    toast(r.mensagem || "Entrada registrada.");
-    // Mostra a mensagem de confirmação
-    document.getElementById("entradaPlaca").value = "";
-    // Limpa o campo de placa
-    document.getElementById("entradaVaga").value = "";
-    // Limpa o campo oculto de vaga
-    document.getElementById("entradaVagaLabel").value = "";
-    // Limpa o campo visível de vaga
-    vagaSelecionada = null;
-    // Reseta a variável global
-    carregarMapaVagas();
-    // Recarrega o mapa de vagas
-    carregarPatio();
-    // Recarrega a lista de veículos no pátio
+function renderSpotCell(sp){
+  const def = TIPOS_VAGA[sp.tipo];
+  if(sp.manut){
+    return `<div class="spot manutencao" data-id="${sp.id}"><span class="spot-num">${sp.numero}</span><span class="spot-tag">Manutenção</span></div>`;
   }
-  // Fecha a verificação de sucesso
+  if(sp.status==='ocupado'){
+    const mv = MOVES.find(m=>m.vagaId===sp.id && m.status==='ativo');
+    const mins = mv? elapsedMin(mv.entrada) : 0;
+    return `<div class="spot ocupado" data-id="${sp.id}">
+      ${def.badge?`<span class="spot-badge">${def.badge}</span>`:''}
+      <span class="spot-num">${sp.numero}</span>
+      <div>
+        <div class="spot-plate">${mv? mv.placa : '—'}</div>
+        <div class="spot-time">${fmtDur(mins)}</div>
+      </div>
+    </div>`;
+  }
+  return `<div class="spot livre" data-id="${sp.id}">
+    ${def.badge?`<span class="spot-badge">${def.badge}</span>`:''}
+    <span class="spot-num">${sp.numero}</span>
+    <span class="spot-tag">${sp.tipo} · livre</span>
+  </div>`;
 }
-// Fecha a função registrarEntrada()
 
-async function registrarSaida(){
-  // Abre a função que registra a saída de um veículo
-  const placa = document.getElementById("saidaPlaca").value.trim();
-  // Lê a placa digitada
-  if(!placa){ toast("Informe a placa.", true); return; }
-  // Valida se a placa foi informada; interrompe se não
-  const r = await api("/saida", {method:"POST", body: JSON.stringify({placa})});
-  // Envia a placa via POST para a API
-  const div = document.getElementById("saidaResultado");
-  // Referência do bloco de resultado
-  if(r){
-    // Abre a verificação de sucesso
-    div.innerHTML = `
-      <div class="card" style="margin:0;">
-        <strong>Placa:</strong> ${r.placa}<br>
-        <strong>Entrada:</strong> ${r.data_entrada}<br>
-        <strong>Saída:</strong> ${r.data_saida}<br>
-        <strong>Permanência:</strong> ${r.permanencia_minutos} min<br>
-        <strong>Valor total:</strong> R$ ${Number(r.valor_total).toFixed(2)}
-      </div>`;
-    // Monta o resumo em HTML com os dados retornados
-    toast("Saída registrada.");
-    // Confirma o sucesso da operação
-    document.getElementById("saidaPlaca").value = "";
-    // Limpa o campo de placa
-    carregarMapaVagas();
-    // Recarrega o mapa de vagas
-    carregarPatio();
-    // Recarrega a lista de veículos no pátio
+function openVagaOcupadaInfo(sp){
+  const mv = MOVES.find(m=>m.vagaId===sp.id && m.status==='ativo');
+  if(!mv){ toast('Registro não encontrado para esta vaga.', false); return; }
+  const veh = VEHICLES.find(v=>v.id===mv.veiculoId);
+  const mins = elapsedMin(mv.entrada);
+  const estimativa = calcularValor(mv.entrada, new Date(), mv.cobranca);
+  openModal('Vaga '+sp.numero, `
+    <div class="callout info">${ICON.info}<div>Veículo estacionado nesta vaga desde ${fmtDateTime(mv.entrada)}.</div></div>
+    <div class="field-row">
+      <div class="field"><label>Placa</label><input class="mono" value="${mv.placa}" disabled></div>
+      <div class="field"><label>Veículo</label><input value="${veh? veh.marca+' '+veh.modelo : '—'}" disabled></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Tempo no pátio</label><input value="${fmtDur(mins)}" disabled></div>
+      <div class="field"><label>Cobrança</label><input value="${mv.cobranca}" disabled></div>
+    </div>
+    <div class="charge-box">
+      <div class="charge-row"><span>Valor estimado até agora</span><span class="mono">${fmtMoney(estimativa)}</span></div>
+    </div>
+  `, [
+    {label:'Fechar', cls:'btn-ghost', onClick:closeModal},
+    {label:'Registrar saída', cls:'btn-primary', onClick:()=>{ closeModal(); openSaidaModal(mv.id); }},
+  ]);
+}
+
+/* =========================================================
+   ENTRADA / SAÍDA
+========================================================= */
+function renderMovimentacao(){
+  renderAtivos();
+  renderHistorico();
+}
+
+function renderAtivos(){
+  const ativos = MOVES.filter(m=>m.status==='ativo').sort((a,b)=>a.entrada-b.entrada);
+  document.getElementById('ativosBody').innerHTML = ativos.map(m=>{
+    const veh = VEHICLES.find(v=>v.id===m.veiculoId);
+    const vaga = SPOTS.find(s=>s.id===m.vagaId);
+    const mins = elapsedMin(m.entrada);
+    const estimativa = calcularValor(m.entrada, new Date(), m.cobranca);
+    return `<tr>
+      <td class="plate">${m.placa}</td>
+      <td>${veh? veh.marca+' '+veh.modelo : '—'}</td>
+      <td>${vaga? vaga.numero+' · '+vaga.tipo : '—'}</td>
+      <td>${fmtDateTime(m.entrada)}</td>
+      <td class="mono-cell">${fmtDur(mins)}</td>
+      <td>${cobrancaPill(m.cobranca)}</td>
+      <td class="mono-cell">${m.cobranca==='Mensalista'||m.cobranca==='Anual' ? '—' : fmtMoney(estimativa)}</td>
+      <td><button class="btn btn-sm" data-exit="${m.id}">${ICON.exit} Saída</button></td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="8" class="table-empty">Nenhum veículo no pátio no momento.</td></tr>`;
+
+  document.querySelectorAll('[data-exit]').forEach(b=> b.addEventListener('click', ()=> openSaidaModal(b.dataset.exit)));
+}
+
+function cobrancaPill(c){
+  const map = {Avulso:'gray', Mensalista:'blue', Anual:'line'};
+  return `<span class="pill ${map[c]||'gray'}">${c}</span>`;
+}
+
+let histFilter = '';
+function renderHistorico(){
+  const rows = MOVES.filter(m=>m.status==='finalizado' && (!histFilter || m.placa.toLowerCase().includes(histFilter)))
+    .sort((a,b)=>b.saida-a.saida).slice(0,120);
+  document.getElementById('histBody').innerHTML = rows.map(m=>{
+    const vaga = SPOTS.find(s=>s.id===m.vagaId);
+    const mins = Math.round((m.saida-m.entrada)/60000);
+    return `<tr>
+      <td class="plate">${m.placa}</td>
+      <td>${vaga? vaga.numero : '—'}</td>
+      <td>${fmtDateTime(m.entrada)}</td>
+      <td>${fmtDateTime(m.saida)}</td>
+      <td class="mono-cell">${fmtDur(mins)}</td>
+      <td>${cobrancaPill(m.cobranca)}</td>
+      <td class="mono-cell">${fmtMoney(m.valor)}</td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="7" class="table-empty">Nenhum registro no histórico.</td></tr>`;
+}
+
+document.querySelectorAll('[data-movtab]').forEach(chip=>{
+  chip.addEventListener('click', ()=>{
+    document.querySelectorAll('[data-movtab]').forEach(c=>c.classList.remove('active'));
+    chip.classList.add('active');
+    const tab = chip.dataset.movtab;
+    document.getElementById('movAtivosWrap').style.display = tab==='ativos' ? '' : 'none';
+    document.getElementById('movHistoricoWrap').style.display = tab==='historico' ? '' : 'none';
+  });
+});
+document.getElementById('histSearch').addEventListener('input', e=>{ histFilter = e.target.value.trim().toLowerCase(); renderHistorico(); });
+
+/* ---- Nova entrada modal ---- */
+function openEntradaModal(preselectSpotId){
+  const placaOpts = VEHICLES.map(v=>`<option value="${v.id}">${v.placa} — ${v.marca} ${v.modelo}</option>`).join('');
+  const spotOpts = (tipoFiltro)=> SPOTS.filter(s=>!s.manut && s.status==='livre' && (!tipoFiltro || TIPOS_VAGA[s.tipo].vehicleTypes.includes(tipoFiltro)))
+      .map(s=>`<option value="${s.id}" ${s.id===preselectSpotId?'selected':''}>${s.numero} · ${s.tipo}</option>`).join('');
+
+  const body = `
+    <div class="callout info" id="entradaHint">${ICON.info}<div>Selecione um veículo já cadastrado ou preencha os dados de um veículo novo.</div></div>
+    <div class="field">
+      <label>Veículo cadastrado</label>
+      <select id="fVeiculoExistente">
+        <option value="">— Veículo novo / avulso —</option>
+        ${placaOpts}
+      </select>
+    </div>
+    <div id="novoVeiculoFields">
+      <div class="field-row">
+        <div class="field"><label>Placa</label><input class="mono" id="fPlacaNova" placeholder="ABC1D23" maxlength="8"></div>
+        <div class="field"><label>Tipo de veículo</label>
+          <select id="fTipoNovo">
+            <option>Carro</option><option>SUV/Caminhonete</option><option>Moto</option><option>Utilitário/Van</option><option>Caminhão</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Marca</label><input id="fMarcaNova" placeholder="Ex: Fiat"></div>
+        <div class="field"><label>Modelo</label><input id="fModeloNovo" placeholder="Ex: Argo"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Cor</label><input id="fCorNova" placeholder="Ex: Prata"></div>
+        <div class="field"><label>Ano</label><input type="number" id="fAnoNovo" placeholder="2023"></div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Vaga</label>
+      <select id="fVaga">${spotOpts()}</select>
+      <div class="field-warn" id="vagaWarn">${ICON.warn} Nenhuma vaga compatível livre para este tipo de veículo.</div>
+    </div>
+    <div class="field">
+      <label>Forma de cobrança</label>
+      <select id="fCobranca">
+        <option value="Avulso">Avulso (hora / diária)</option>
+        <option value="Mensalista">Mensalista</option>
+        <option value="Anual">Plano anual</option>
+      </select>
+    </div>
+  `;
+  openModal('Nova entrada', body, [
+    {label:'Cancelar', cls:'btn-ghost', onClick:closeModal},
+    {label:'Registrar entrada', cls:'btn-primary', onClick:submitEntrada},
+  ]);
+
+  const sel = document.getElementById('fVeiculoExistente');
+  const novoWrap = document.getElementById('novoVeiculoFields');
+  function refreshSpotOptions(){
+    const veh = sel.value ? VEHICLES.find(v=>v.id===sel.value) : null;
+    const tipo = veh ? veh.tipo : document.getElementById('fTipoNovo').value;
+    const vagaSel = document.getElementById('fVaga');
+    vagaSel.innerHTML = spotOpts(tipo);
+    document.getElementById('vagaWarn').classList.toggle('show', vagaSel.options.length===0);
+    if(veh){
+      const c = veh.clienteId ? CLIENTS.find(c=>c.id===veh.clienteId) : null;
+      document.getElementById('fCobranca').value = c ? c.plano : 'Avulso';
+    }
+  }
+  sel.addEventListener('change', ()=>{
+    novoWrap.style.display = sel.value ? 'none' : '';
+    refreshSpotOptions();
+  });
+  document.getElementById('fTipoNovo').addEventListener('change', refreshSpotOptions);
+  document.getElementById('fPlacaNova').addEventListener('input', e=>{ e.target.value = e.target.value.toUpperCase(); });
+  refreshSpotOptions();
+}
+
+function submitEntrada(){
+  const vagaId = document.getElementById('fVaga').value;
+  if(!vagaId){ toast('Escolha uma vaga compatível para continuar.', false); return; }
+  const selExist = document.getElementById('fVeiculoExistente').value;
+  let veh;
+  if(selExist){
+    veh = VEHICLES.find(v=>v.id===selExist);
   } else {
-    // Abre o ramo alternativo: falha na requisição
-    div.innerHTML = "";
-    // Garante que nenhum resultado antigo permaneça exibido
+    const placa = document.getElementById('fPlacaNova').value.trim().toUpperCase();
+    if(!placa){ toast('Informe a placa do veículo.', false); return; }
+    if(VEHICLES.some(v=>v.placa===placa)){ toast('Já existe um veículo com esta placa. Selecione-o na lista.', false); return; }
+    veh = {
+      id: uid('vehicle'), placa,
+      marca: document.getElementById('fMarcaNova').value.trim() || '—',
+      modelo: document.getElementById('fModeloNovo').value.trim() || '—',
+      cor: document.getElementById('fCorNova').value.trim() || '—',
+      tipo: document.getElementById('fTipoNovo').value,
+      porte: 'Médio',
+      ano: parseInt(document.getElementById('fAnoNovo').value) || new Date().getFullYear(),
+      clienteId: null,
+    };
+    VEHICLES.push(veh);
   }
-  // Fecha a verificação de sucesso/falha
-}
-// Fecha a função registrarSaida()
+  const alreadyIn = MOVES.some(m=>m.veiculoId===veh.id && m.status==='ativo');
+  if(alreadyIn){ toast('Este veículo já está registrado como no pátio.', false); return; }
 
-async function carregarPatio(){
-  // Abre a função que lista os veículos no pátio
-  const rows = await api("/relatorios/patio");
-  // Busca o relatório de pátio na API
-  const tbody = document.querySelector("#tabelaPatio tbody");
-  // Referência do corpo da tabela
-  tbody.innerHTML = "";
-  // Limpa as linhas anteriores
-  if(!rows || rows.length === 0){
-    // Abre a verificação de lista vazia
-    tbody.innerHTML = `<tr><td colspan="5" class="empty">Nenhum veículo no pátio.</td></tr>`;
-    // Exibe mensagem de estado vazio
-    return;
-    // Interrompe a função
-  }
-  // Fecha a verificação de lista vazia
-  rows.forEach(r => {
-    // Percorre cada veículo retornado
-    tbody.innerHTML += `<tr>
-      <td>${r.placa}</td>
-      <td>${r.marca || ""} ${r.modelo || ""}</td>
-      <td>${r.vaga_numero}</td>
-      <td>${r.data_entrada}</td>
-      <td>${r.tipo_cobranca}</td>
+  const vaga = SPOTS.find(s=>s.id===vagaId);
+  vaga.status = 'ocupado';
+  const cobranca = document.getElementById('fCobranca').value;
+  MOVES.push({id:uid('move'), placa:veh.placa, veiculoId:veh.id, vagaId:vaga.id, entrada:new Date(), saida:null, cobranca, valor:0, status:'ativo'});
+  closeModal();
+  toast('Entrada registrada na vaga '+vaga.numero+'.');
+  refreshAll();
+}
+
+/* ---- Registrar saída ---- */
+function openSaidaModal(moveId){
+  const mv = MOVES.find(m=>m.id===moveId);
+  const veh = VEHICLES.find(v=>v.id===mv.veiculoId);
+  const vaga = SPOTS.find(s=>s.id===mv.vagaId);
+  const saidaPrevista = new Date();
+  const mins = Math.round((saidaPrevista-mv.entrada)/60000);
+  const valor = calcularValor(mv.entrada, saidaPrevista, mv.cobranca);
+
+  openModal('Registrar saída · '+mv.placa, `
+    <div class="field-row">
+      <div class="field"><label>Veículo</label><input value="${veh? veh.marca+' '+veh.modelo+' · '+veh.cor : '—'}" disabled></div>
+      <div class="field"><label>Vaga</label><input value="${vaga? vaga.numero : '—'}" disabled></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Entrada</label><input value="${fmtDateTime(mv.entrada)}" disabled></div>
+      <div class="field"><label>Saída</label><input value="${fmtDateTime(saidaPrevista)}" disabled></div>
+    </div>
+    <div class="charge-box">
+      <div class="charge-row"><span>Tempo total</span><span class="mono">${fmtDur(mins)}</span></div>
+      <div class="charge-row"><span>Forma de cobrança</span><span>${mv.cobranca}</span></div>
+      <div class="charge-row"><span>Tolerância gratuita</span><span class="mono">${TARIFAS.tolerancia} min</span></div>
+      <div class="charge-row total"><span>Valor a cobrar</span><span class="mono">${fmtMoney(valor)}</span></div>
+    </div>
+  `, [
+    {label:'Cancelar', cls:'btn-ghost', onClick:closeModal},
+    {label:'Confirmar saída', cls:'btn-primary', onClick:()=>confirmSaida(mv.id)},
+  ]);
+}
+
+function confirmSaida(moveId){
+  const mv = MOVES.find(m=>m.id===moveId);
+  const vaga = SPOTS.find(s=>s.id===mv.vagaId);
+  mv.saida = new Date();
+  mv.valor = calcularValor(mv.entrada, mv.saida, mv.cobranca);
+  mv.status = 'finalizado';
+  if(vaga) vaga.status = 'livre';
+  closeModal();
+  toast('Saída registrada · '+fmtMoney(mv.valor)+' cobrado.');
+  refreshAll();
+}
+
+/* =========================================================
+   VEÍCULOS
+========================================================= */
+let vecFilter = {q:'', tipo:''};
+function renderVeiculos(){
+  const rows = VEHICLES.filter(v=>{
+    const q = vecFilter.q;
+    const matchQ = !q || v.placa.toLowerCase().includes(q) || v.marca.toLowerCase().includes(q) || v.modelo.toLowerCase().includes(q);
+    const matchT = !vecFilter.tipo || v.tipo===vecFilter.tipo;
+    return matchQ && matchT;
+  });
+  document.getElementById('vecCount').textContent = rows.length+' veículo(s)';
+  document.getElementById('veiculosBody').innerHTML = rows.map(v=>{
+    const cli = v.clienteId ? CLIENTS.find(c=>c.id===v.clienteId) : null;
+    const parked = MOVES.some(m=>m.veiculoId===v.id && m.status==='ativo');
+    return `<tr>
+      <td class="plate">${v.placa} ${parked?'<span class="pill red" style="margin-left:6px;">no pátio</span>':''}</td>
+      <td>${v.marca} ${v.modelo}</td>
+      <td>${v.cor}</td>
+      <td>${v.tipo}</td>
+      <td>${v.porte}</td>
+      <td class="mono-cell">${v.ano}</td>
+      <td>${cli? cli.nome : '<span style="color:var(--steel);">Avulso</span>'}</td>
+      <td><div class="table-actions">
+        <button class="btn btn-sm" data-edit-veh="${v.id}">${ICON.edit}</button>
+        <button class="btn btn-sm btn-danger" data-del-veh="${v.id}">${ICON.trash}</button>
+      </div></td>
     </tr>`;
-    // Adiciona uma linha com os dados do veículo
-  });
-  // Fecha o forEach dos veículos
-}
-// Fecha a função carregarPatio()
+  }).join('') || `<tr><td colspan="8" class="table-empty">Nenhum veículo encontrado.</td></tr>`;
 
-// ---------- CLIENTES ----------
-async function carregarClientes(){
-  // Abre a função que lista os clientes cadastrados
-  const termo = document.getElementById("buscaCliente").value;
-  // Lê o termo digitado na busca
-  const rows = await api("/clientes?q=" + encodeURIComponent(termo));
-  // Busca os clientes filtrados pelo termo
-  const tbody = document.getElementById("tabelaClientes");
-  // Referência do corpo da tabela
-  tbody.innerHTML = "";
-  // Limpa as linhas anteriores
-  if(!rows || rows.length === 0){
-    // Abre a verificação de lista vazia
-    tbody.innerHTML = `<tr><td colspan="5" class="empty">Nenhum cliente encontrado.</td></tr>`;
-    // Exibe mensagem de estado vazio
-    return;
-    // Interrompe a função
-  }
-  // Fecha a verificação de lista vazia
-  rows.forEach(c => {
-    // Percorre cada cliente retornado
-    tbody.innerHTML += `<tr>
-      <td>${c.nome}</td><td>${c.cpf}</td><td>${c.telefone||""}</td><td>${c.email||""}</td>
-      <td class="actions">
-        <button class="btn secondary" onclick='editarCliente(${JSON.stringify(c)})'>Editar</button>
-        <button class="btn danger" onclick="excluirCliente(${c.id})">Excluir</button>
-      </td>
-    </tr>`;
-    // Adiciona uma linha com dados e botões de ação do cliente
-  });
-  // Fecha o forEach dos clientes
+  document.querySelectorAll('[data-edit-veh]').forEach(b=> b.addEventListener('click', ()=>openVeiculoModal(b.dataset.editVeh)));
+  document.querySelectorAll('[data-del-veh]').forEach(b=> b.addEventListener('click', ()=>deleteVeiculo(b.dataset.delVeh)));
 }
-// Fecha a função carregarClientes()
+document.getElementById('vecSearch').addEventListener('input', e=>{ vecFilter.q = e.target.value.trim().toLowerCase(); renderVeiculos(); });
+document.getElementById('vecFilterTipo').addEventListener('change', e=>{ vecFilter.tipo = e.target.value; renderVeiculos(); });
 
-function editarCliente(c){
-  // Abre a função que preenche o formulário para edição
-  document.getElementById("clienteId").value = c.id;
-  // Preenche o ID do cliente
-  document.getElementById("clienteNome").value = c.nome;
-  // Preenche o nome
-  document.getElementById("clienteCpf").value = c.cpf;
-  // Preenche o CPF
-  document.getElementById("clienteTelefone").value = c.telefone || "";
-  // Preenche o telefone (ou vazio)
-  document.getElementById("clienteEmail").value = c.email || "";
-  // Preenche o email (ou vazio)
-  document.getElementById("clienteFormTitulo").textContent = "Editar Cliente";
-  // Atualiza o título do formulário
-}
-// Fecha a função editarCliente()
-
-function limparFormCliente(){
-  // Abre a função que reseta o formulário de cliente
-  document.getElementById("clienteId").value = "";
-  // Limpa o ID
-  document.getElementById("clienteNome").value = "";
-  // Limpa o nome
-  document.getElementById("clienteCpf").value = "";
-  // Limpa o CPF
-  document.getElementById("clienteTelefone").value = "";
-  // Limpa o telefone
-  document.getElementById("clienteEmail").value = "";
-  // Limpa o email
-  document.getElementById("clienteFormTitulo").textContent = "Novo Cliente";
-  // Restaura o título do formulário
-}
-// Fecha a função limparFormCliente()
-
-async function salvarCliente(){
-  // Abre a função que salva (cria ou atualiza) um cliente
-  const id = document.getElementById("clienteId").value;
-  // Lê o ID (vazio = novo cadastro)
-  const payload = {
-    // Abre o objeto de dados a enviar
-    nome: document.getElementById("clienteNome").value.trim(),
-    // Nome do formulário
-    cpf: document.getElementById("clienteCpf").value.trim(),
-    // CPF do formulário
-    telefone: document.getElementById("clienteTelefone").value.trim(),
-    // Telefone do formulário
-    email: document.getElementById("clienteEmail").value.trim(),
-    // Email do formulário
-  };
-  // Fecha o objeto de dados
-  const r = id
-    ? await api(`/clientes/${id}`, {method:"PUT", body: JSON.stringify(payload)})
-    // Se houver ID, atualiza via PUT
-    : await api("/clientes", {method:"POST", body: JSON.stringify(payload)});
-    // Caso contrário, cria via POST
-  if(r){
-    // Abre a verificação de sucesso
-    toast("Cliente salvo.");
-    // Confirma o sucesso
-    limparFormCliente();
-    // Limpa o formulário
-    carregarClientes();
-    // Recarrega a lista de clientes
-  }
-  // Fecha a verificação de sucesso
-}
-// Fecha a função salvarCliente()
-
-async function excluirCliente(id){
-  // Abre a função que exclui um cliente
-  if(!confirm("Excluir este cliente?")) return;
-  // Pede confirmação; interrompe se o usuário cancelar
-  const r = await api(`/clientes/${id}`, {method:"DELETE"});
-  // Envia a requisição DELETE
-  if(r){ toast("Cliente excluído."); carregarClientes(); }
-  // Em caso de sucesso, avisa e recarrega a lista
-}
-// Fecha a função excluirCliente()
-
-// ---------- VEÍCULOS ----------
-async function carregarClientesSelect(){
-  // Abre a função que preenche o select de clientes no formulário de veículos
-  const rows = await api("/clientes");
-  // Busca todos os clientes
-  const sel = document.getElementById("veiculoCliente");
-  // Referência do elemento select
-  sel.innerHTML = '<option value="">-- sem cliente --</option>';
-  // Reinicia as opções com o valor padrão
-  (rows || []).forEach(c => {
-    // Percorre os clientes retornados (ou lista vazia)
-    const opt = document.createElement("option");
-    // Cria uma nova opção
-    opt.value = c.id;
-    // Define o valor como o ID do cliente
-    opt.textContent = c.nome;
-    // Define o texto como o nome do cliente
-    sel.appendChild(opt);
-    // Adiciona a opção ao select
-  });
-  // Fecha o forEach dos clientes
-}
-// Fecha a função carregarClientesSelect()
-
-async function carregarVeiculos(){
-  // Abre a função que lista os veículos cadastrados
-  const termo = document.getElementById("buscaVeiculo").value;
-  // Lê o termo de busca
-  const rows = await api("/veiculos?q=" + encodeURIComponent(termo));
-  // Busca os veículos filtrados
-  const tbody = document.getElementById("tabelaVeiculos");
-  // Referência do corpo da tabela
-  tbody.innerHTML = "";
-  // Limpa as linhas anteriores
-  if(!rows || rows.length === 0){
-    // Abre a verificação de lista vazia
-    tbody.innerHTML = `<tr><td colspan="5" class="empty">Nenhum veículo encontrado.</td></tr>`;
-    // Exibe mensagem de estado vazio
-    return;
-    // Interrompe a função
-  }
-  // Fecha a verificação de lista vazia
-  rows.forEach(v => {
-    // Percorre cada veículo retornado
-    tbody.innerHTML += `<tr>
-      <td>${v.placa}</td><td>${v.cliente_nome || "-"}</td><td>${v.marca||""} ${v.modelo||""}</td><td>${v.tipo}</td>
-      <td class="actions">
-        <button class="btn secondary" onclick='editarVeiculo(${JSON.stringify(v)})'>Editar</button>
-        <button class="btn danger" onclick="excluirVeiculo(${v.id})">Excluir</button>
-      </td>
-    </tr>`;
-    // Adiciona uma linha com dados e botões de ação do veículo
-  });
-  // Fecha o forEach dos veículos
-}
-// Fecha a função carregarVeiculos()
-
-function editarVeiculo(v){
-  // Abre a função que preenche o formulário para edição
-  document.getElementById("veiculoId").value = v.id;
-  // Preenche o ID
-  document.getElementById("veiculoPlaca").value = v.placa;
-  // Preenche a placa
-  document.getElementById("veiculoCliente").value = v.cliente_id || "";
-  // Preenche o cliente vinculado (ou vazio)
-  document.getElementById("veiculoMarca").value = v.marca || "";
-  // Preenche a marca
-  document.getElementById("veiculoModelo").value = v.modelo || "";
-  // Preenche o modelo
-  document.getElementById("veiculoCor").value = v.cor || "";
-  // Preenche a cor
-  document.getElementById("veiculoTipo").value = v.tipo || "carro";
-  // Preenche o tipo (padrão "carro")
-  document.getElementById("veiculoTamanho").value = v.tamanho || "medio";
-  // Preenche o tamanho (padrão "medio")
-  document.getElementById("veiculoAno").value = v.ano || "";
-  // Preenche o ano
-  document.getElementById("veiculoFormTitulo").textContent = "Editar Veículo";
-  // Atualiza o título do formulário
-}
-// Fecha a função editarVeiculo()
-
-function limparFormVeiculo(){
-  // Abre a função que reseta o formulário de veículo
-  ["veiculoId","veiculoPlaca","veiculoMarca","veiculoModelo","veiculoCor","veiculoAno"].forEach(id => document.getElementById(id).value = "");
-  // Limpa vários campos de uma só vez, percorrendo a lista de IDs
-  document.getElementById("veiculoCliente").value = "";
-  // Limpa o cliente vinculado
-  document.getElementById("veiculoTipo").value = "carro";
-  // Restaura o tipo padrão
-  document.getElementById("veiculoTamanho").value = "medio";
-  // Restaura o tamanho padrão
-  document.getElementById("veiculoFormTitulo").textContent = "Novo Veículo";
-  // Restaura o título do formulário
-}
-// Fecha a função limparFormVeiculo()
-
-async function salvarVeiculo(){
-  // Abre a função que salva (cria ou atualiza) um veículo
-  const id = document.getElementById("veiculoId").value;
-  // Lê o ID (vazio = novo cadastro)
-  const payload = {
-    // Abre o objeto de dados a enviar
-    placa: document.getElementById("veiculoPlaca").value.trim(),
-    // Placa do formulário
-    cliente_id: document.getElementById("veiculoCliente").value || null,
-    // Cliente vinculado, ou null se não escolhido
-    marca: document.getElementById("veiculoMarca").value.trim(),
-    // Marca do formulário
-    modelo: document.getElementById("veiculoModelo").value.trim(),
-    // Modelo do formulário
-    cor: document.getElementById("veiculoCor").value.trim(),
-    // Cor do formulário
-    tipo: document.getElementById("veiculoTipo").value,
-    // Tipo escolhido
-    tamanho: document.getElementById("veiculoTamanho").value,
-    // Tamanho escolhido
-    ano: document.getElementById("veiculoAno").value || null,
-    // Ano, ou null se vazio
-  };
-  // Fecha o objeto de dados
-  const r = id
-    ? await api(`/veiculos/${id}`, {method:"PUT", body: JSON.stringify(payload)})
-    // Se houver ID, atualiza via PUT
-    : await api("/veiculos", {method:"POST", body: JSON.stringify(payload)});
-    // Caso contrário, cria via POST
-  if(r){ toast("Veículo salvo."); limparFormVeiculo(); carregarVeiculos(); }
-  // Em caso de sucesso, avisa, limpa o formulário e recarrega a lista
-}
-// Fecha a função salvarVeiculo()
-
-async function excluirVeiculo(id){
-  // Abre a função que exclui um veículo
-  if(!confirm("Excluir este veículo?")) return;
-  // Pede confirmação; interrompe se cancelado
-  const r = await api(`/veiculos/${id}`, {method:"DELETE"});
-  // Envia a requisição DELETE
-  if(r){ toast("Veículo excluído."); carregarVeiculos(); }
-  // Em caso de sucesso, avisa e recarrega a lista
-}
-// Fecha a função excluirVeiculo()
-
-// ---------- VAGAS ----------
-async function carregarVagas(){
-  // Abre a função que lista as vagas cadastradas
-  const status = document.getElementById("filtroVagaStatus").value;
-  // Lê o filtro de status
-  const tipo = document.getElementById("filtroVagaTipo").value;
-  // Lê o filtro de tipo
-  const params = new URLSearchParams();
-  // Cria o objeto de parâmetros de URL
-  if(status) params.set("status", status);
-  // Adiciona o status se selecionado
-  if(tipo) params.set("tipo", tipo);
-  // Adiciona o tipo se selecionado
-  const rows = await api("/vagas?" + params.toString());
-  // Busca as vagas já filtradas
-  const tbody = document.getElementById("tabelaVagas");
-  // Referência do corpo da tabela
-  tbody.innerHTML = "";
-  // Limpa as linhas anteriores
-  if(!rows || rows.length === 0){
-    // Abre a verificação de lista vazia
-    tbody.innerHTML = `<tr><td colspan="5" class="empty">Nenhuma vaga encontrada.</td></tr>`;
-    // Exibe mensagem de estado vazio
-    return;
-    // Interrompe a função
-  }
-  // Fecha a verificação de lista vazia
-  rows.forEach(v => {
-    // Percorre cada vaga retornada
-    tbody.innerHTML += `<tr>
-      <td>${v.numero}</td><td>${v.tipo}</td><td>${v.setor||""}</td>
-      <td><span class="badge ${v.status}">${v.status}</span></td>
-      <td class="actions">
-        <button class="btn secondary" onclick='editarVaga(${JSON.stringify(v)})'>Editar</button>
-        <button class="btn danger" onclick="excluirVaga(${v.id})">Excluir</button>
-      </td>
-    </tr>`;
-    // Adiciona uma linha com dados, selo de status e botões de ação
-  });
-  // Fecha o forEach das vagas
-}
-// Fecha a função carregarVagas()
-
-function editarVaga(v){
-  // Abre a função que preenche o formulário para edição
-  document.getElementById("vagaId").value = v.id;
-  // Preenche o ID
-  document.getElementById("vagaNumero").value = v.numero;
-  // Preenche o número
-  document.getElementById("vagaTipo").value = v.tipo;
-  // Preenche o tipo
-  document.getElementById("vagaSetor").value = v.setor || "";
-  // Preenche o setor
-  document.getElementById("vagaFormTitulo").textContent = "Editar Vaga";
-  // Atualiza o título do formulário
-}
-// Fecha a função editarVaga()
-
-function limparFormVaga(){
-  // Abre a função que reseta o formulário de vaga
-  document.getElementById("vagaId").value = "";
-  // Limpa o ID
-  document.getElementById("vagaNumero").value = "";
-  // Limpa o número
-  document.getElementById("vagaSetor").value = "";
-  // Limpa o setor
-  document.getElementById("vagaTipo").value = "normal";
-  // Restaura o tipo padrão
-  document.getElementById("vagaFormTitulo").textContent = "Nova Vaga";
-  // Restaura o título do formulário
-}
-// Fecha a função limparFormVaga()
-
-async function salvarVaga(){
-  // Abre a função que salva (cria ou atualiza) uma vaga
-  const id = document.getElementById("vagaId").value;
-  // Lê o ID (vazio = novo cadastro)
-  const payload = {
-    // Abre o objeto de dados a enviar
-    numero: document.getElementById("vagaNumero").value.trim(),
-    // Número do formulário
-    tipo: document.getElementById("vagaTipo").value,
-    // Tipo escolhido
-    setor: document.getElementById("vagaSetor").value.trim(),
-    // Setor do formulário
-  };
-  // Fecha o objeto de dados
-  const r = id
-    ? await api(`/vagas/${id}`, {method:"PUT", body: JSON.stringify(payload)})
-    // Se houver ID, atualiza via PUT
-    : await api("/vagas", {method:"POST", body: JSON.stringify(payload)});
-    // Caso contrário, cria via POST
-  if(r){ toast("Vaga salva."); limparFormVaga(); carregarVagas(); }
-  // Em caso de sucesso, avisa, limpa o formulário e recarrega a lista
-}
-// Fecha a função salvarVaga()
-
-async function excluirVaga(id){
-  // Abre a função que exclui uma vaga
-  if(!confirm("Excluir esta vaga?")) return;
-  // Pede confirmação; interrompe se cancelado
-  const r = await api(`/vagas/${id}`, {method:"DELETE"});
-  // Envia a requisição DELETE
-  if(r){ toast("Vaga excluída."); carregarVagas(); }
-  // Em caso de sucesso, avisa e recarrega a lista
-}
-// Fecha a função excluirVaga()
-
-// ---------- TARIFAS ----------
-async function carregarTarifas(){
-  // Abre a função que lista as tarifas cadastradas
-  const rows = await api("/tarifas");
-  // Busca todas as tarifas
-  const tbody = document.getElementById("tabelaTarifas");
-  // Referência do corpo da tabela
-  tbody.innerHTML = "";
-  // Limpa as linhas anteriores
-  if(!rows || rows.length === 0){
-    // Abre a verificação de lista vazia
-    tbody.innerHTML = `<tr><td colspan="6" class="empty">Nenhuma tarifa cadastrada.</td></tr>`;
-    // Exibe mensagem de estado vazio
-    return;
-    // Interrompe a função
-  }
-  // Fecha a verificação de lista vazia
-  rows.forEach(t => {
-    // Percorre cada tarifa retornada
-    tbody.innerHTML += `<tr>
-      <td>${t.tipo_veiculo}</td>
-      <td>R$ ${Number(t.valor_hora).toFixed(2)}</td>
-      <td>R$ ${Number(t.valor_diaria).toFixed(2)}</td>
-      <td>R$ ${Number(t.valor_mensal).toFixed(2)}</td>
-      <td>R$ ${Number(t.valor_anual).toFixed(2)}</td>
-      <td class="actions">
-        <button class="btn secondary" onclick='editarTarifa(${JSON.stringify(t)})'>Editar</button>
-        <button class="btn danger" onclick="excluirTarifa(${t.id})">Excluir</button>
-      </td>
-    </tr>`;
-    // Adiciona uma linha com valores formatados e botões de ação
-  });
-  // Fecha o forEach das tarifas
-}
-// Fecha a função carregarTarifas()
-
-function editarTarifa(t){
-  // Abre a função que preenche o formulário para edição
-  document.getElementById("tarifaId").value = t.id;
-  // Preenche o ID
-  document.getElementById("tarifaTipoVeiculo").value = t.tipo_veiculo;
-  // Preenche o tipo de veículo
-  document.getElementById("tarifaHora").value = t.valor_hora;
-  // Preenche o valor por hora
-  document.getElementById("tarifaDiaria").value = t.valor_diaria;
-  // Preenche o valor da diária
-  document.getElementById("tarifaMensal").value = t.valor_mensal;
-  // Preenche o valor mensal
-  document.getElementById("tarifaAnual").value = t.valor_anual;
-  // Preenche o valor anual
-  document.getElementById("tarifaFormTitulo").textContent = "Editar Tarifa";
-  // Atualiza o título do formulário
-}
-// Fecha a função editarTarifa()
-
-function limparFormTarifa(){
-  // Abre a função que reseta o formulário de tarifa
-  ["tarifaId","tarifaTipoVeiculo","tarifaHora","tarifaDiaria","tarifaMensal","tarifaAnual"].forEach(id => document.getElementById(id).value = "");
-  // Limpa todos os campos percorrendo a lista de IDs
-  document.getElementById("tarifaFormTitulo").textContent = "Nova Tarifa";
-  // Restaura o título do formulário
-}
-// Fecha a função limparFormTarifa()
-
-async function salvarTarifa(){
-  // Abre a função que salva (cria ou atualiza) uma tarifa
-  const id = document.getElementById("tarifaId").value;
-  // Lê o ID (vazio = novo cadastro)
-  const payload = {
-    // Abre o objeto de dados a enviar
-    tipo_veiculo: document.getElementById("tarifaTipoVeiculo").value.trim(),
-    // Tipo de veículo do formulário
-    valor_hora: document.getElementById("tarifaHora").value || 0,
-    // Valor por hora, ou 0 se vazio
-    valor_diaria: document.getElementById("tarifaDiaria").value || 0,
-    // Valor da diária, ou 0 se vazio
-    valor_mensal: document.getElementById("tarifaMensal").value || 0,
-    // Valor mensal, ou 0 se vazio
-    valor_anual: document.getElementById("tarifaAnual").value || 0,
-    // Valor anual, ou 0 se vazio
-  };
-  // Fecha o objeto de dados
-  const r = id
-    ? await api(`/tarifas/${id}`, {method:"PUT", body: JSON.stringify(payload)})
-    // Se houver ID, atualiza via PUT
-    : await api("/tarifas", {method:"POST", body: JSON.stringify(payload)});
-    // Caso contrário, cria via POST
-  if(r){ toast("Tarifa salva."); limparFormTarifa(); carregarTarifas(); }
-  // Em caso de sucesso, avisa, limpa o formulário e recarrega a lista
-}
-// Fecha a função salvarTarifa()
-
-async function excluirTarifa(id){
-  // Abre a função que exclui uma tarifa
-  if(!confirm("Excluir esta tarifa?")) return;
-  // Pede confirmação; interrompe se cancelado
-  const r = await api(`/tarifas/${id}`, {method:"DELETE"});
-  // Envia a requisição DELETE
-  if(r){ toast("Tarifa excluída."); carregarTarifas(); }
-  // Em caso de sucesso, avisa e recarrega a lista
-}
-// Fecha a função excluirTarifa()
-
-// ---------- RELATÓRIOS ----------
-async function carregarOcupacao(){
-  // Abre a função que busca os indicadores de ocupação
-  const r = await api("/relatorios/ocupacao");
-  // Busca o relatório de ocupação
-  if(!r) return;
-  // Interrompe se a requisição falhar
-  document.getElementById("statsOcupacao").innerHTML = `
-    <div class="stat"><div class="n">${r.total_vagas}</div><div class="l">Total de vagas</div></div>
-    <div class="stat"><div class="n">${r.ocupadas}</div><div class="l">Ocupadas</div></div>
-    <div class="stat"><div class="n">${r.livres}</div><div class="l">Livres</div></div>
-    <div class="stat"><div class="n">${r.taxa_ocupacao}%</div><div class="l">Taxa de ocupação</div></div>
+function openVeiculoModal(id){
+  const v = id ? VEHICLES.find(x=>x.id===id) : null;
+  const cliOpts = CLIENTS.map(c=>`<option value="${c.id}" ${v&&v.clienteId===c.id?'selected':''}>${c.nome}</option>`).join('');
+  const tipos = ['Carro','SUV/Caminhonete','Moto','Utilitário/Van','Caminhão'];
+  const portes = ['Pequeno','Médio','Grande'];
+  const body = `
+    <div class="field-row">
+      <div class="field"><label>Placa</label><input class="mono" id="vfPlaca" maxlength="8" value="${v?v.placa:''}" ${v?'disabled':''}></div>
+      <div class="field"><label>Ano</label><input type="number" id="vfAno" value="${v?v.ano:new Date().getFullYear()}"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Marca</label><input id="vfMarca" value="${v?v.marca:''}" placeholder="Ex: Fiat"></div>
+      <div class="field"><label>Modelo</label><input id="vfModelo" value="${v?v.modelo:''}" placeholder="Ex: Argo"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Cor</label><input id="vfCor" value="${v?v.cor:''}" placeholder="Ex: Prata"></div>
+      <div class="field"><label>Tipo</label><select id="vfTipo">${tipos.map(t=>`<option ${v&&v.tipo===t?'selected':''}>${t}</option>`).join('')}</select></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Porte</label><select id="vfPorte">${portes.map(p=>`<option ${v&&v.porte===p?'selected':''}>${p}</option>`).join('')}</select></div>
+      <div class="field"><label>Proprietário</label><select id="vfCliente"><option value="">Sem vínculo (avulso)</option>${cliOpts}</select></div>
+    </div>
   `;
-  // Preenche os quatro cartões de estatística
-  const tbody = document.querySelector("#tabelaOcupacaoTipo tbody");
-  // Referência do corpo da tabela de ocupação por tipo
-  tbody.innerHTML = "";
-  // Limpa as linhas anteriores
-  (r.por_tipo || []).forEach(t => {
-    // Percorre os tipos retornados (ou lista vazia)
-    tbody.innerHTML += `<tr><td>${t.tipo}</td><td>${t.total}</td><td>${t.ocupadas}</td><td>${t.livres}</td></tr>`;
-    // Adiciona uma linha com os totais daquele tipo
-  });
-  // Fecha o forEach dos tipos
+  openModal(v?'Editar veículo':'Novo veículo', body, [
+    {label:'Cancelar', cls:'btn-ghost', onClick:closeModal},
+    {label: v?'Salvar alterações':'Cadastrar veículo', cls:'btn-primary', onClick:()=>saveVeiculo(v?v.id:null)},
+  ]);
 }
-// Fecha a função carregarOcupacao()
 
-async function carregarFaturamento(){
-  // Abre a função que busca o faturamento em um período
-  const inicio = document.getElementById("fatInicio").value;
-  // Lê a data de início
-  const fim = document.getElementById("fatFim").value;
-  // Lê a data de fim
-  const params = new URLSearchParams();
-  // Cria o objeto de parâmetros de URL
-  if(inicio) params.set("data_inicio", inicio);
-  // Adiciona a data de início se preenchida
-  if(fim) params.set("data_fim", fim);
-  // Adiciona a data de fim se preenchida
-  const r = await api("/relatorios/faturamento?" + params.toString());
-  // Busca o relatório de faturamento
-  if(!r) return;
-  // Interrompe se a requisição falhar
-  document.getElementById("statsFaturamento").innerHTML = `
-    <div class="stat"><div class="n">${r.quantidade_registros}</div><div class="l">Registros</div></div>
-    <div class="stat"><div class="n">R$ ${Number(r.faturamento_total).toFixed(2)}</div><div class="l">Faturamento total</div></div>
-  `;
-  // Preenche os cartões de estatística de faturamento
-  const tbody = document.querySelector("#tabelaFaturamentoTipo tbody");
-  // Referência do corpo da tabela
-  tbody.innerHTML = "";
-  // Limpa as linhas anteriores
-  (r.por_tipo_cobranca || []).forEach(t => {
-    // Percorre os tipos de cobrança retornados
-    tbody.innerHTML += `<tr><td>${t.tipo_cobranca}</td><td>${t.qtd}</td><td>R$ ${Number(t.total||0).toFixed(2)}</td></tr>`;
-    // Adiciona uma linha com quantidade e total daquele tipo
-  });
-  // Fecha o forEach dos tipos de cobrança
-}
-// Fecha a função carregarFaturamento()
-
-async function carregarClientesHistoricoSelect(){
-  // Abre a função que preenche o select de clientes do histórico
-  const rows = await api("/clientes");
-  // Busca todos os clientes
-  const sel = document.getElementById("historicoCliente");
-  // Referência do elemento select
-  sel.innerHTML = "";
-  // Limpa as opções anteriores
-  (rows || []).forEach(c => {
-    // Percorre os clientes retornados
-    const opt = document.createElement("option");
-    // Cria uma nova opção
-    opt.value = c.id;
-    // Define o valor como o ID do cliente
-    opt.textContent = c.nome;
-    // Define o texto como o nome do cliente
-    sel.appendChild(opt);
-    // Adiciona a opção ao select
-  });
-  // Fecha o forEach dos clientes
-}
-// Fecha a função carregarClientesHistoricoSelect()
-
-async function carregarHistoricoCliente(){
-  // Abre a função que busca o histórico de um cliente
-  const id = document.getElementById("historicoCliente").value;
-  // Lê o ID do cliente selecionado
-  if(!id) return;
-  // Interrompe se nenhum cliente estiver selecionado
-  const rows = await api(`/relatorios/historico-cliente/${id}`);
-  // Busca o histórico daquele cliente
-  const tbody = document.getElementById("tabelaHistorico");
-  // Referência do corpo da tabela
-  tbody.innerHTML = "";
-  // Limpa as linhas anteriores
-  if(!rows || rows.length === 0){
-    // Abre a verificação de lista vazia
-    tbody.innerHTML = `<tr><td colspan="6" class="empty">Nenhum registro encontrado.</td></tr>`;
-    // Exibe mensagem de estado vazio
-    return;
-    // Interrompe a função
+function saveVeiculo(id){
+  const placa = document.getElementById('vfPlaca').value.trim().toUpperCase();
+  const marca = document.getElementById('vfMarca').value.trim();
+  const modelo = document.getElementById('vfModelo').value.trim();
+  if(!placa || !marca || !modelo){ toast('Preencha placa, marca e modelo.', false); return; }
+  if(!id && VEHICLES.some(v=>v.placa===placa)){ toast('Já existe um veículo com esta placa.', false); return; }
+  const data = {
+    placa, marca, modelo,
+    cor: document.getElementById('vfCor').value.trim()||'—',
+    tipo: document.getElementById('vfTipo').value,
+    porte: document.getElementById('vfPorte').value,
+    ano: parseInt(document.getElementById('vfAno').value)||new Date().getFullYear(),
+    clienteId: document.getElementById('vfCliente').value || null,
+  };
+  if(id){
+    Object.assign(VEHICLES.find(v=>v.id===id), data);
+    toast('Veículo atualizado.');
+  } else {
+    VEHICLES.push({id:uid('vehicle'), ...data});
+    toast('Veículo cadastrado.');
   }
-  // Fecha a verificação de lista vazia
-  rows.forEach(m => {
-    // Percorre cada movimentação retornada
-    tbody.innerHTML += `<tr>
-      <td>${m.placa}</td>
-      <td>${m.marca||""} ${m.modelo||""}</td>
-      <td>${m.data_entrada||""}</td>
-      <td>${m.data_saida||"-"}</td>
-      <td>${m.valor_total ? "R$ " + Number(m.valor_total).toFixed(2) : "-"}</td>
-      <td>${m.status}</td>
-    </tr>`;
-    // Adiciona uma linha com os dados da movimentação
+  closeModal();
+  refreshAll();
+}
+
+function deleteVeiculo(id){
+  if(MOVES.some(m=>m.veiculoId===id && m.status==='ativo')){ toast('Não é possível excluir: veículo está no pátio.', false); return; }
+  if(!confirm('Remover este veículo do cadastro?')) return;
+  VEHICLES = VEHICLES.filter(v=>v.id!==id);
+  toast('Veículo removido.');
+  refreshAll();
+}
+
+/* =========================================================
+   CLIENTES
+========================================================= */
+let cliFilter = {q:'', plano:''};
+function renderClientes(){
+  const rows = CLIENTS.filter(c=>{
+    const q = cliFilter.q;
+    const matchQ = !q || c.nome.toLowerCase().includes(q) || (c.cpf||'').toLowerCase().includes(q) || c.telefone.toLowerCase().includes(q);
+    const matchP = !cliFilter.plano || c.plano===cliFilter.plano;
+    return matchQ && matchP;
   });
-  // Fecha o forEach das movimentações
-}
-// Fecha a função carregarHistoricoCliente()
+  document.getElementById('cliCount').textContent = rows.length+' cliente(s)';
+  document.getElementById('clientesBody').innerHTML = rows.map(c=>{
+    const nVeh = VEHICLES.filter(v=>v.clienteId===c.id).length;
+    const planoMap = {Avulso:'gray',Mensalista:'blue',Anual:'line'};
+    return `<tr>
+      <td>${c.nome}</td>
+      <td class="mono-cell">${c.cpf}</td>
+      <td class="mono-cell">${c.telefone}</td>
+      <td><span class="pill ${planoMap[c.plano]}">${c.plano}</span></td>
+      <td>${nVeh}</td>
+      <td>${fmtDate(c.desde)}</td>
+      <td><div class="table-actions">
+        <button class="btn btn-sm" data-edit-cli="${c.id}">${ICON.edit}</button>
+        <button class="btn btn-sm btn-danger" data-del-cli="${c.id}">${ICON.trash}</button>
+      </div></td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="7" class="table-empty">Nenhum cliente encontrado.</td></tr>`;
 
-// ---------- Inicialização ----------
-async function verificarConexao(){
-  // Abre a função que testa a conexão com a API
-  const r = await api("/relatorios/ocupacao");
-  // Usa o endpoint de ocupação como teste de conexão
-  document.getElementById("statusApi").textContent = r ? "conectado à API" : "servidor indisponível";
-  // Atualiza o texto de status conforme o resultado
-  document.getElementById("statusDot").className = "dot " + (r ? "on" : "off");
-  // Atualiza a cor da bolinha de status conforme o resultado
+  document.querySelectorAll('[data-edit-cli]').forEach(b=> b.addEventListener('click', ()=>openClienteModal(b.dataset.editCli)));
+  document.querySelectorAll('[data-del-cli]').forEach(b=> b.addEventListener('click', ()=>deleteCliente(b.dataset.delCli)));
 }
-// Fecha a função verificarConexao()
+document.getElementById('cliSearch').addEventListener('input', e=>{ cliFilter.q = e.target.value.trim().toLowerCase(); renderClientes(); });
+document.getElementById('cliFilterTipo').addEventListener('change', e=>{ cliFilter.plano = e.target.value; renderClientes(); });
 
-verificarConexao();
-// Executa o teste de conexão assim que o script carrega
-carregarAba("patio");
-// Carrega os dados da aba inicial "Mapa de Vagas" automaticamente
-/* Fecha a tag script: fim de todo o JavaScript do documento */
+function openClienteModal(id){
+  const c = id ? CLIENTS.find(x=>x.id===id) : null;
+  const body = `
+    <div class="field"><label>Nome / razão social</label><input id="cfNome" value="${c?c.nome:''}" placeholder="Nome completo"></div>
+    <div class="field-row">
+      <div class="field"><label>CPF / CNPJ</label><input class="mono" id="cfCpf" value="${c?c.cpf:''}" placeholder="000.000.000-00"></div>
+      <div class="field"><label>Telefone</label><input class="mono" id="cfTel" value="${c?c.telefone:''}" placeholder="(00) 00000-0000"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>E-mail</label><input id="cfEmail" value="${c?c.email:''}" placeholder="nome@email.com"></div>
+      <div class="field"><label>Plano</label><select id="cfPlano">
+        <option ${c&&c.plano==='Avulso'?'selected':''}>Avulso</option>
+        <option ${c&&c.plano==='Mensalista'?'selected':''}>Mensalista</option>
+        <option ${c&&c.plano==='Anual'?'selected':''}>Anual</option>
+      </select></div>
+    </div>
+  `;
+  openModal(c?'Editar cliente':'Novo cliente', body, [
+    {label:'Cancelar', cls:'btn-ghost', onClick:closeModal},
+    {label: c?'Salvar alterações':'Cadastrar cliente', cls:'btn-primary', onClick:()=>saveCliente(c?c.id:null)},
+  ]);
+}
+
+function saveCliente(id){
+  const nome = document.getElementById('cfNome').value.trim();
+  if(!nome){ toast('Informe o nome do cliente.', false); return; }
+  const data = {
+    nome,
+    cpf: document.getElementById('cfCpf').value.trim()||'—',
+    telefone: document.getElementById('cfTel').value.trim()||'—',
+    email: document.getElementById('cfEmail').value.trim()||'—',
+    plano: document.getElementById('cfPlano').value,
+  };
+  if(id){
+    Object.assign(CLIENTS.find(c=>c.id===id), data);
+    toast('Cliente atualizado.');
+  } else {
+    CLIENTS.push({id:uid('client'), ...data, desde:new Date()});
+    toast('Cliente cadastrado.');
+  }
+  closeModal();
+  refreshAll();
+}
+
+function deleteCliente(id){
+  if(VEHICLES.some(v=>v.clienteId===id)){ toast('Não é possível excluir: cliente possui veículos vinculados.', false); return; }
+  if(!confirm('Remover este cliente do cadastro?')) return;
+  CLIENTS = CLIENTS.filter(c=>c.id!==id);
+  toast('Cliente removido.');
+  refreshAll();
+}
+
+/* =========================================================
+   TARIFAS
+========================================================= */
+function renderTarifas(){
+  document.getElementById('tarifaCards').innerHTML = `
+    ${tarifaCard('Hora', fmtMoney(TARIFAS.hora), '1ª hora')}
+    ${tarifaCard('Diária', fmtMoney(TARIFAS.diaria), 'permanência até 24h')}
+    ${tarifaCard('Mensalista', fmtMoney(TARIFAS.mensal), 'por mês')}
+    ${tarifaCard('Plano anual', fmtMoney(TARIFAS.anual), 'por ano')}
+  `;
+  document.getElementById('tarifaHora').value = TARIFAS.hora;
+  document.getElementById('tarifaFracao').value = TARIFAS.fracao;
+  document.getElementById('tarifaDiaria').value = TARIFAS.diaria;
+  document.getElementById('tarifaMensal').value = TARIFAS.mensal;
+  document.getElementById('tarifaAnual').value = TARIFAS.anual;
+  document.getElementById('tarifaTolerancia').value = TARIFAS.tolerancia;
+}
+function tarifaCard(label,value,note){
+  return `<div class="card kpi"><div class="kpi-top"><span class="kpi-label">${label}</span><span class="kpi-icon">${ICON.tag}</span></div>
+  <div class="kpi-value">${value}</div><div class="kpi-note">${note}</div></div>`;
+}
+document.getElementById('btnSalvarTarifas').addEventListener('click', ()=>{
+  TARIFAS.hora = parseFloat(document.getElementById('tarifaHora').value)||TARIFAS.hora;
+  TARIFAS.fracao = parseFloat(document.getElementById('tarifaFracao').value)||TARIFAS.fracao;
+  TARIFAS.diaria = parseFloat(document.getElementById('tarifaDiaria').value)||TARIFAS.diaria;
+  TARIFAS.mensal = parseFloat(document.getElementById('tarifaMensal').value)||TARIFAS.mensal;
+  TARIFAS.anual = parseFloat(document.getElementById('tarifaAnual').value)||TARIFAS.anual;
+  TARIFAS.tolerancia = parseInt(document.getElementById('tarifaTolerancia').value)||TARIFAS.tolerancia;
+  toast('Tabela de preços atualizada.');
+  renderTarifas();
+});
+
+/* =========================================================
+   RELATÓRIOS
+========================================================= */
+function renderRelatorios(){
+  const finalizados = MOVES.filter(m=>m.status==='finalizado');
+  const receitaTotal = finalizados.reduce((a,m)=>a+m.valor,0);
+  const ticketMedio = finalizados.length ? receitaTotal/finalizados.length : 0;
+  const duracaoMedia = finalizados.length ? finalizados.reduce((a,m)=>a+(m.saida-m.entrada)/60000,0)/finalizados.length : 0;
+  const ocupAtual = Math.round(SPOTS.filter(s=>s.status==='ocupado').length/SPOTS.length*100);
+
+  document.getElementById('repKpis').innerHTML = `
+    ${kpi('revenue','Receita (histórico)', fmtMoney(receitaTotal), finalizados.length+' movimentações encerradas','')}
+    ${kpi('report','Ticket médio', fmtMoney(ticketMedio), 'por veículo atendido','')}
+    ${kpi('clock','Permanência média', fmtDur(Math.round(duracaoMedia)), 'entrada até saída','')}
+    ${kpi('occ','Ocupação atual', ocupAtual+'%', SPOTS.filter(s=>s.status==='ocupado').length+' vagas em uso','')}
+  `;
+
+  // donut frota por tipo
+  const tiposVeh = ['Carro','SUV/Caminhonete','Moto','Utilitário/Van','Caminhão'];
+  const cores = ['#FFC94A','#5B9BD9','#4FBF8B','#E5584B','#8B929C'];
+  const counts = tiposVeh.map(t=>VEHICLES.filter(v=>v.tipo===t).length);
+  const totalVeh = counts.reduce((a,b)=>a+b,0) || 1;
+  let acc = 0;
+  const stops = tiposVeh.map((t,i)=>{
+    const pct = counts[i]/totalVeh*100;
+    const s = `${cores[i]} ${acc}% ${acc+pct}%`;
+    acc += pct;
+    return s;
+  }).join(', ');
+  document.getElementById('repDonut').innerHTML = `
+    <div class="donut-wrap">
+      <div class="donut" style="background:conic-gradient(${stops});mask:radial-gradient(circle, transparent 56%, black 57%);-webkit-mask:radial-gradient(circle, transparent 56%, black 57%);"></div>
+      <div class="donut-legend">
+        ${tiposVeh.map((t,i)=>`<div class="li"><i style="background:${cores[i]};"></i>${t}<b>${counts[i]}</b></div>`).join('')}
+      </div>
+    </div>`;
+
+  // ocupação por setor
+  const setores = [
+    {key:'A',label:'Setor A — Normais'},{key:'B',label:'Setor B — Preferencial/Idoso'},
+    {key:'C',label:'Setor C — Motos'},{key:'D',label:'Setor D — Grandes'}];
+  document.getElementById('repSectors').innerHTML = setores.map(s=>{
+    const items = SPOTS.filter(sp=>sp.setor===s.key);
+    const occ = items.filter(sp=>sp.status==='ocupado').length;
+    const pct = Math.round(occ/items.length*100);
+    return `<div class="hbar-row">
+      <div class="hbar-label">${s.label}</div>
+      <div class="hbar-track"><div class="hbar-fill" style="width:${pct}%;background:var(--line);"></div></div>
+      <div class="hbar-val">${occ}/${items.length}</div>
+    </div>`;
+  }).join('');
+
+  // faturamento por forma de cobrança (30 dias)
+  const cortes = ['Avulso','Mensalista','Anual'];
+  const cutoff = offsetDate(-30);
+  const totals = cortes.map(c=> finalizados.filter(m=>m.cobranca===c && m.saida>=cutoff).reduce((a,m)=>a+m.valor,0));
+  const maxT = Math.max(1,...totals);
+  document.getElementById('repByCharge').innerHTML = `<div class="bars" style="height:120px;">
+    ${cortes.map((c,i)=>`
+      <div class="bar-col">
+        <span class="bv">${fmtMoney(totals[i])}</span>
+        <div class="bar" style="height:${Math.max(4,totals[i]/maxT*90)}px;"></div>
+        <span class="bl">${c}</span>
+      </div>`).join('')}
+  </div>`;
+}
+
+document.getElementById('btnExportarCsv').addEventListener('click', ()=>{
+  const rows = [['Placa','Vaga','Entrada','Saida','Cobranca','Valor']];
+  MOVES.filter(m=>m.status==='finalizado').forEach(m=>{
+    const vaga = SPOTS.find(s=>s.id===m.vagaId);
+    rows.push([m.placa, vaga?vaga.numero:'', fmtDateTime(m.entrada), fmtDateTime(m.saida), m.cobranca, m.valor.toFixed(2)]);
+  });
+  const csv = rows.map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(';')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'historico_estacionamento.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+  toast('Histórico exportado em CSV.');
+});
+
+/* =========================================================
+   AÇÕES GLOBAIS
+========================================================= */
+['btnNovaEntradaTop','btnNovaEntradaVagas','btnNovaEntradaMov'].forEach(id=>{
+  document.getElementById(id).addEventListener('click', ()=>openEntradaModal(null));
+});
+document.getElementById('btnNovoVeiculo').addEventListener('click', ()=>openVeiculoModal(null));
+document.getElementById('btnNovoCliente').addEventListener('click', ()=>openClienteModal(null));
+
+document.getElementById('globalSearch').addEventListener('keydown', e=>{
+  if(e.key==='Enter'){
+    const q = e.target.value.trim().toUpperCase();
+    if(!q) return;
+    const mv = MOVES.find(m=>m.status==='ativo' && m.placa===q);
+    if(mv){ goto('vagas'); toast('Veículo '+q+' localizado no pátio.'); }
+    else { goto('veiculos'); document.getElementById('vecSearch').value=q; vecFilter.q=q.toLowerCase(); renderVeiculos(); }
+  }
+});
+
+function refreshAll(){
+  const active = document.querySelector('.nav-item.active');
+  renderView(active ? active.dataset.view : 'dashboard');
+}
+
+/* clock */
+function tickClock(){
+  const now = new Date();
+  document.getElementById('clock').textContent = now.toLocaleDateString('pt-BR')+' · '+now.toLocaleTimeString('pt-BR');
+}
+setInterval(()=>{ tickClock(); const v=document.querySelector('.view.active'); if(v && v.id==='view-vagas') renderVagas(); if(v && v.id==='view-movimentacao') renderAtivos(); }, 1000*20);
+
+/* =========================================================
+   INIT
+========================================================= */
+seed();
+buildNav();
+tickClock();
+goto('dashboard');
+
+})();
 </script>
-
 </body>
-<!-- Fecha o corpo visível da página -->
 </html>
-<!-- Fecha o elemento raiz do HTML -->
