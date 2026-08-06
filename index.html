@@ -600,6 +600,105 @@ const ICON = {
 };
 
 /* =========================================================
+   BASE REAL DE MARCAS E MODELOS
+========================================================= */
+const MARCAS_MODELOS = {
+  'Carro': {
+    'Volkswagen': ['Gol','Polo','Virtus','Nivus','Voyage','Golf','Fox','Jetta'],
+    'Fiat': ['Argo','Mobi','Cronos','Pulse','Fastback','Uno','Palio','Grand Siena'],
+    'Chevrolet': ['Onix','Onix Plus','Cruze','Prisma','Spin','Celta'],
+    'Ford': ['Ka','Fiesta','Focus'],
+    'Toyota': ['Corolla','Yaris','Etios','Corolla Cross'],
+    'Honda': ['Civic','City','Fit'],
+    'Hyundai': ['HB20','HB20S','i30','Elantra'],
+    'Renault': ['Kwid','Sandero','Logan','Clio'],
+    'Nissan': ['Versa','March','Sentra'],
+    'Peugeot': ['208','301'],
+    'Citroën': ['C3','C4 Lounge'],
+    'BMW': ['320i','120i'],
+    'Mercedes-Benz': ['Classe A','Classe C'],
+    'Audi': ['A3','A4'],
+    'Kia': ['Cerato','Soul'],
+    'Suzuki': ['Swift'],
+  },
+  'SUV/Caminhonete': {
+    'Volkswagen': ['T-Cross','Taos','Saveiro','Amarok'],
+    'Fiat': ['Strada','Toro','Pulse'],
+    'Chevrolet': ['Tracker','S10','Trailblazer'],
+    'Ford': ['EcoSport','Ranger','Territory'],
+    'Toyota': ['Hilux','SW4','Corolla Cross'],
+    'Honda': ['HR-V','WR-V'],
+    'Hyundai': ['Creta','Tucson'],
+    'Renault': ['Duster','Oroch'],
+    'Jeep': ['Renegade','Compass','Commander'],
+    'Nissan': ['Kicks','Frontier'],
+    'Mitsubishi': ['L200 Triton','ASX','Pajero Sport'],
+    'Peugeot': ['2008','3008'],
+    'Citroën': ['C4 Cactus','Aircross'],
+    'BMW': ['X1','X3'],
+    'Mercedes-Benz': ['GLA','GLC'],
+    'Audi': ['Q3','Q5'],
+    'Kia': ['Sportage'],
+    'Suzuki': ['Jimny','Vitara'],
+    'Land Rover': ['Discovery Sport','Evoque'],
+  },
+  'Moto': {
+    'Honda': ['CG 160','Biz 125','PCX','XRE 300','Bros 160','CB 500'],
+    'Yamaha': ['Fazer 250','Factor 125','NMAX','MT-03','XTZ 250 Lander'],
+    'Suzuki': ['Intruder 125','GSX-S750'],
+    'Kawasaki': ['Ninja 300','Z400'],
+    'Shineray': ['SHI 175'],
+    'Dafra': ['Citycom 300'],
+  },
+  'Utilitário/Van': {
+    'Renault': ['Master','Kangoo'],
+    'Fiat': ['Fiorino','Ducato'],
+    'Volkswagen': ['Delivery','Kombi'],
+    'Mercedes-Benz': ['Sprinter','Vito'],
+    'Iveco': ['Daily'],
+    'Peugeot': ['Partner','Expert'],
+    'Citroën': ['Jumpy','Berlingo'],
+    'Hyundai': ['HR'],
+  },
+  'Caminhão': {
+    'Volvo': ['FH 540','FH 460','VM 270'],
+    'Scania': ['R 450','P 310','G 380'],
+    'Mercedes-Benz': ['Atego','Actros','Axor'],
+    'Volkswagen': ['Constellation','Delivery Express'],
+    'Iveco': ['Tector','Stralis'],
+    'DAF': ['XF','CF'],
+    'Ford': ['Cargo'],
+  },
+};
+
+/* Título: primeira letra de cada palavra em maiúscula (não usado em CPF/CNPJ e telefone) */
+function toTitleCase(str){
+  if(!str) return str;
+  return str
+    .toLowerCase()
+    .split(' ')
+    .map(w=> w.length ? w.charAt(0).toUpperCase()+w.slice(1) : w)
+    .join(' ');
+}
+function bindTitleCase(input){
+  if(!input) return;
+  input.addEventListener('blur', ()=>{ input.value = toTitleCase(input.value.trim()); });
+}
+function populateModelos(tipo, selMarca, selModelo, marcaAtual, modeloAtual){
+  const marcas = Object.keys(MARCAS_MODELOS[tipo] || {}).sort();
+  selMarca.innerHTML = '<option value="">Selecione a marca</option>' + marcas.map(m=>`<option value="${m}" ${m===marcaAtual?'selected':''}>${m}</option>`).join('');
+  refreshModelos(tipo, selMarca, selModelo, modeloAtual);
+}
+function refreshModelos(tipo, selMarca, selModelo, modeloAtual){
+  const marca = selMarca.value;
+  const modelos = (marca && MARCAS_MODELOS[tipo] && MARCAS_MODELOS[tipo][marca]) ? MARCAS_MODELOS[tipo][marca] : [];
+  selModelo.innerHTML = modelos.length
+    ? modelos.map(md=>`<option value="${md}" ${md===modeloAtual?'selected':''}>${md}</option>`).join('')
+    : '<option value="">Selecione a marca primeiro</option>';
+  selModelo.disabled = modelos.length === 0;
+}
+
+/* =========================================================
    ESTADO (em memória)
 ========================================================= */
 const NAV = [
@@ -1061,7 +1160,7 @@ function openEntradaModal(preselectSpotId){
       .map(s=>`<option value="${s.id}" ${s.id===preselectSpotId?'selected':''}>${s.numero} · ${s.tipo}</option>`).join('');
 
   const body = `
-    <div class="callout info" id="entradaHint">${ICON.info}<div>Selecione um veículo já cadastrado ou preencha os dados de um veículo novo.</div></div>
+    <div class="callout info" id="entradaHint">${ICON.info}<div>Selecione um veículo já cadastrado ou preencha os dados de um veículo novo (marca e modelo reais).</div></div>
     <div class="field">
       <label>Veículo cadastrado</label>
       <select id="fVeiculoExistente">
@@ -1079,8 +1178,8 @@ function openEntradaModal(preselectSpotId){
         </div>
       </div>
       <div class="field-row">
-        <div class="field"><label>Marca</label><input id="fMarcaNova" placeholder="Ex: Fiat"></div>
-        <div class="field"><label>Modelo</label><input id="fModeloNovo" placeholder="Ex: Argo"></div>
+        <div class="field"><label>Marca</label><select id="fMarcaNova"></select></div>
+        <div class="field"><label>Modelo</label><select id="fModeloNovo"></select></div>
       </div>
       <div class="field-row">
         <div class="field"><label>Cor</label><input id="fCorNova" placeholder="Ex: Prata"></div>
@@ -1108,9 +1207,18 @@ function openEntradaModal(preselectSpotId){
 
   const sel = document.getElementById('fVeiculoExistente');
   const novoWrap = document.getElementById('novoVeiculoFields');
+  const tipoNovoSel = document.getElementById('fTipoNovo');
+  const marcaNovaSel = document.getElementById('fMarcaNova');
+  const modeloNovoSel = document.getElementById('fModeloNovo');
+
+  populateModelos(tipoNovoSel.value, marcaNovaSel, modeloNovoSel);
+  marcaNovaSel.addEventListener('change', ()=> refreshModelos(tipoNovoSel.value, marcaNovaSel, modeloNovoSel));
+  tipoNovoSel.addEventListener('change', ()=>{ populateModelos(tipoNovoSel.value, marcaNovaSel, modeloNovoSel); refreshSpotOptions(); });
+  bindTitleCase(document.getElementById('fCorNova'));
+
   function refreshSpotOptions(){
     const veh = sel.value ? VEHICLES.find(v=>v.id===sel.value) : null;
-    const tipo = veh ? veh.tipo : document.getElementById('fTipoNovo').value;
+    const tipo = veh ? veh.tipo : tipoNovoSel.value;
     const vagaSel = document.getElementById('fVaga');
     vagaSel.innerHTML = spotOpts(tipo);
     document.getElementById('vagaWarn').classList.toggle('show', vagaSel.options.length===0);
@@ -1123,7 +1231,6 @@ function openEntradaModal(preselectSpotId){
     novoWrap.style.display = sel.value ? 'none' : '';
     refreshSpotOptions();
   });
-  document.getElementById('fTipoNovo').addEventListener('change', refreshSpotOptions);
   document.getElementById('fPlacaNova').addEventListener('input', e=>{ e.target.value = e.target.value.toUpperCase(); });
   refreshSpotOptions();
 }
@@ -1139,11 +1246,13 @@ function submitEntrada(){
     const placa = document.getElementById('fPlacaNova').value.trim().toUpperCase();
     if(!placa){ toast('Informe a placa do veículo.', false); return; }
     if(VEHICLES.some(v=>v.placa===placa)){ toast('Já existe um veículo com esta placa. Selecione-o na lista.', false); return; }
+    const marca = document.getElementById('fMarcaNova').value;
+    const modelo = document.getElementById('fModeloNovo').value;
+    if(!marca || !modelo){ toast('Selecione marca e modelo do veículo.', false); return; }
     veh = {
       id: uid('vehicle'), placa,
-      marca: document.getElementById('fMarcaNova').value.trim() || '—',
-      modelo: document.getElementById('fModeloNovo').value.trim() || '—',
-      cor: document.getElementById('fCorNova').value.trim() || '—',
+      marca, modelo,
+      cor: toTitleCase(document.getElementById('fCorNova').value.trim()) || '—',
       tipo: document.getElementById('fTipoNovo').value,
       porte: 'Médio',
       ano: parseInt(document.getElementById('fAnoNovo').value) || new Date().getFullYear(),
@@ -1252,15 +1361,15 @@ function openVeiculoModal(id){
       <div class="field"><label>Ano</label><input type="number" id="vfAno" value="${v?v.ano:new Date().getFullYear()}"></div>
     </div>
     <div class="field-row">
-      <div class="field"><label>Marca</label><input id="vfMarca" value="${v?v.marca:''}" placeholder="Ex: Fiat"></div>
-      <div class="field"><label>Modelo</label><input id="vfModelo" value="${v?v.modelo:''}" placeholder="Ex: Argo"></div>
+      <div class="field"><label>Tipo</label><select id="vfTipo">${tipos.map(t=>`<option ${v&&v.tipo===t?'selected':''}>${t}</option>`).join('')}</select></div>
+      <div class="field"><label>Porte</label><select id="vfPorte">${portes.map(p=>`<option ${v&&v.porte===p?'selected':''}>${p}</option>`).join('')}</select></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Marca</label><select id="vfMarca"></select></div>
+      <div class="field"><label>Modelo</label><select id="vfModelo"></select></div>
     </div>
     <div class="field-row">
       <div class="field"><label>Cor</label><input id="vfCor" value="${v?v.cor:''}" placeholder="Ex: Prata"></div>
-      <div class="field"><label>Tipo</label><select id="vfTipo">${tipos.map(t=>`<option ${v&&v.tipo===t?'selected':''}>${t}</option>`).join('')}</select></div>
-    </div>
-    <div class="field-row">
-      <div class="field"><label>Porte</label><select id="vfPorte">${portes.map(p=>`<option ${v&&v.porte===p?'selected':''}>${p}</option>`).join('')}</select></div>
       <div class="field"><label>Proprietário</label><select id="vfCliente"><option value="">Sem vínculo (avulso)</option>${cliOpts}</select></div>
     </div>
   `;
@@ -1268,17 +1377,25 @@ function openVeiculoModal(id){
     {label:'Cancelar', cls:'btn-ghost', onClick:closeModal},
     {label: v?'Salvar alterações':'Cadastrar veículo', cls:'btn-primary', onClick:()=>saveVeiculo(v?v.id:null)},
   ]);
+
+  const tipoSel = document.getElementById('vfTipo');
+  const marcaSel = document.getElementById('vfMarca');
+  const modeloSel = document.getElementById('vfModelo');
+  populateModelos(tipoSel.value, marcaSel, modeloSel, v?v.marca:undefined, v?v.modelo:undefined);
+  tipoSel.addEventListener('change', ()=> populateModelos(tipoSel.value, marcaSel, modeloSel));
+  marcaSel.addEventListener('change', ()=> refreshModelos(tipoSel.value, marcaSel, modeloSel));
+  bindTitleCase(document.getElementById('vfCor'));
 }
 
 function saveVeiculo(id){
   const placa = document.getElementById('vfPlaca').value.trim().toUpperCase();
-  const marca = document.getElementById('vfMarca').value.trim();
-  const modelo = document.getElementById('vfModelo').value.trim();
+  const marca = document.getElementById('vfMarca').value;
+  const modelo = document.getElementById('vfModelo').value;
   if(!placa || !marca || !modelo){ toast('Preencha placa, marca e modelo.', false); return; }
   if(!id && VEHICLES.some(v=>v.placa===placa)){ toast('Já existe um veículo com esta placa.', false); return; }
   const data = {
     placa, marca, modelo,
-    cor: document.getElementById('vfCor').value.trim()||'—',
+    cor: toTitleCase(document.getElementById('vfCor').value.trim())||'—',
     tipo: document.getElementById('vfTipo').value,
     porte: document.getElementById('vfPorte').value,
     ano: parseInt(document.getElementById('vfAno').value)||new Date().getFullYear(),
@@ -1359,10 +1476,11 @@ function openClienteModal(id){
     {label:'Cancelar', cls:'btn-ghost', onClick:closeModal},
     {label: c?'Salvar alterações':'Cadastrar cliente', cls:'btn-primary', onClick:()=>saveCliente(c?c.id:null)},
   ]);
+  bindTitleCase(document.getElementById('cfNome'));
 }
 
 function saveCliente(id){
-  const nome = document.getElementById('cfNome').value.trim();
+  const nome = toTitleCase(document.getElementById('cfNome').value.trim());
   if(!nome){ toast('Informe o nome do cliente.', false); return; }
   const data = {
     nome,
