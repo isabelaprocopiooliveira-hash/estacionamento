@@ -282,6 +282,53 @@ select,.select{
 .empty-state h4{color:var(--paper);margin-bottom:6px;font-size:15px;}
 .empty-state p{font-size:12.5px;max-width:320px;margin:0 auto;}
 
+/* ---------- Login do Gerente (tela inicial) ---------- */
+#loginScreen{
+  position:fixed;inset:0;z-index:9999;
+  background:var(--asphalt);
+  display:flex;align-items:center;justify-content:center;
+  padding:24px;
+}
+#loginScreen.hidden{display:none;}
+#shell{display:none;}
+#shell.visible{display:flex;}
+.login-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:14px;
+  width:100%;max-width:400px;
+  padding:32px 28px 28px;
+  box-shadow:0 16px 48px rgba(0,0,0,.4);
+}
+.login-brand{
+  display:flex;align-items:center;gap:12px;margin-bottom:28px;
+}
+.login-brand .brand-mark{
+  width:40px;height:40px;border-radius:10px;background:var(--line);
+  display:flex;align-items:center;justify-content:center;flex:0 0 40px;
+}
+.login-brand .brand-mark::before{content:"P";font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px;color:var(--line-ink);}
+.login-brand h1{font-size:20px;color:var(--paper);margin:0;}
+.login-brand span{display:block;font-size:11px;color:var(--steel);letter-spacing:.06em;text-transform:uppercase;margin-top:2px;}
+.login-title{font-size:15px;font-weight:600;color:var(--paper);margin-bottom:6px;}
+.login-sub{font-size:12.5px;color:var(--steel);margin-bottom:22px;line-height:1.45;}
+.login-error{
+  display:none;background:var(--red-dim);color:#FF8177;
+  border:1px solid #5A2E2A;border-radius:8px;
+  padding:10px 12px;font-size:12.5px;margin-bottom:14px;
+}
+.login-error.show{display:block;}
+.login-card .field{margin-bottom:14px;}
+.login-card .field label{display:block;font-size:12px;font-weight:600;color:var(--steel);margin-bottom:6px;}
+.login-card .field input{
+  width:100%;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;
+  padding:11px 12px;color:var(--paper);font-size:14px;outline:none;font-family:'Inter',sans-serif;
+}
+.login-card .field input.mono{font-family:'JetBrains Mono',monospace;letter-spacing:.04em;}
+.login-card .field input:focus{border-color:var(--line);}
+.login-card .btn-primary{width:100%;justify-content:center;padding:12px 15px;font-size:14px;margin-top:8px;}
+.login-foot{margin-top:18px;text-align:center;font-size:11.5px;color:var(--steel-2);}
+
 @media(max-width:880px){
   #sidebar{position:fixed;left:-236px;z-index:90;transition:left .18s;box-shadow:0 0 40px rgba(0,0,0,.4);}
   #sidebar.open{left:0;}
@@ -292,6 +339,32 @@ select,.select{
 </style>
 </head>
 <body>
+
+<!-- ========== TELA DE LOGIN DO GERENTE ========== -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-brand">
+      <div class="brand-mark"></div>
+      <div>
+        <h1>PARKI</h1>
+        <span>Acesso restrito · Gerente</span>
+      </div>
+    </div>
+    <div class="login-title">Entrar no sistema</div>
+    <div class="login-sub">Somente o gerente autorizado pode acessar a gestão do pátio.</div>
+    <div class="login-error" id="loginError">CPF ou senha incorretos. Tente novamente.</div>
+    <div class="field">
+      <label>CPF do gerente</label>
+      <input type="text" class="mono" id="loginCpf" placeholder="000.000.000-00" maxlength="14" inputmode="numeric" autocomplete="username">
+    </div>
+    <div class="field">
+      <label>Senha</label>
+      <input type="password" id="loginSenha" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn btn-primary" id="btnLogin">Acessar sistema</button>
+    <div class="login-foot">Isabela Vitoria Procopio · Gerente</div>
+  </div>
+</div>
 
 <div id="shell">
   <aside id="sidebar">
@@ -1594,12 +1667,89 @@ function tickClock(){
 setInterval(()=>{ tickClock(); const v=document.querySelector('.view.active'); if(v && v.id==='view-vagas') renderVagas(); if(v && v.id==='view-movimentacao') renderAtivos(); }, 1000*20);
 
 /* =========================================================
+   LOGIN DO GERENTE
+========================================================= */
+const GERENTE = {
+  nome: 'Isabela Vitoria Procopio',
+  cpf: '14570309339',
+  senha: 'gerenteisa08'
+};
+
+function isLoggedIn(){
+  return sessionStorage.getItem('parki_gerente_auth') === '1';
+}
+
+function setLoggedIn(ok){
+  if(ok) sessionStorage.setItem('parki_gerente_auth','1');
+  else sessionStorage.removeItem('parki_gerente_auth');
+}
+
+function showApp(){
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('shell').classList.add('visible');
+}
+
+function showLogin(){
+  document.getElementById('loginScreen').classList.remove('hidden');
+  document.getElementById('shell').classList.remove('visible');
+}
+
+function onlyDigits(str){
+  return (str || '').replace(/\D/g,'');
+}
+
+function formatCpf(digits){
+  digits = onlyDigits(digits).slice(0,11);
+  if(digits.length <= 3) return digits;
+  if(digits.length <= 6) return digits.slice(0,3)+'.'+digits.slice(3);
+  if(digits.length <= 9) return digits.slice(0,3)+'.'+digits.slice(3,6)+'.'+digits.slice(6);
+  return digits.slice(0,3)+'.'+digits.slice(3,6)+'.'+digits.slice(6,9)+'-'+digits.slice(9);
+}
+
+function tryLogin(){
+  const cpf = onlyDigits(document.getElementById('loginCpf').value);
+  const senha = document.getElementById('loginSenha').value || '';
+  const err = document.getElementById('loginError');
+  if(cpf.length !== 11){
+    err.textContent = 'Informe o CPF completo (11 dígitos).';
+    err.classList.add('show');
+    document.getElementById('loginCpf').focus();
+    return;
+  }
+  if(cpf === GERENTE.cpf && senha === GERENTE.senha){
+    err.classList.remove('show');
+    setLoggedIn(true);
+    showApp();
+    toast('Bem-vinda, ' + GERENTE.nome + '!');
+  } else {
+    err.textContent = 'CPF ou senha incorretos. Tente novamente.';
+    err.classList.add('show');
+    document.getElementById('loginSenha').value = '';
+    document.getElementById('loginSenha').focus();
+  }
+}
+
+document.getElementById('btnLogin').addEventListener('click', tryLogin);
+document.getElementById('loginSenha').addEventListener('keydown', e=>{ if(e.key==='Enter') tryLogin(); });
+document.getElementById('loginCpf').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('loginSenha').focus(); });
+document.getElementById('loginCpf').addEventListener('input', e=>{
+  const digits = onlyDigits(e.target.value);
+  e.target.value = formatCpf(digits);
+});
+
+/* =========================================================
    INIT
 ========================================================= */
 seed();
 buildNav();
 tickClock();
 goto('dashboard');
+
+if(isLoggedIn()){
+  showApp();
+} else {
+  showLogin();
+}
 
 })();
 </script>
