@@ -746,66 +746,6 @@ function seed(){
   for(let i=0;i<5;i++) SPOTS.push({id:uid('spot'),setor:'D',numero:'D'+String(i+1).padStart(2,'0'),tipo:'Grande',status:'livre',manut:false});
   // fix A numbering properly
   SPOTS.filter(s=>s.setor==='A').forEach((s,i)=>{ s.numero='A'+String(i+1).padStart(2,'0'); });
-  // marcar 2 em manutenção
-  SPOTS.find(s=>s.numero==='A05').manut = true;
-  SPOTS.find(s=>s.numero==='C08').manut = true;
-
-  const clientesSeed = [
-    ['Marina Alves Ferreira','347.221.980-05','(41) 99811-2234','marina.af@gmail.com','Mensalista'],
-    ['João Pedro Kowalski','512.006.774-31','(41) 98722-5510','jp.kowalski@outlook.com','Avulso'],
-    ['Estúdio Vértice Arquitetura','—','(41) 3022-8871','contato@verticearq.com.br','Anual'],
-    ['Helena Bittencourt','229.884.115-60','(41) 99655-0912','helena.bit@gmail.com','Mensalista'],
-    ['Rafael Nakashima','670.113.442-08','(41) 98411-7789','rafa.naka@hotmail.com','Avulso'],
-    ['Transportes Rota Sul Ltda','—','(41) 3345-1120','operacoes@rotasul.com.br','Mensalista'],
-    ['Camila Duarte Souza','185.290.663-77','(41) 99231-4456','camiladuarte@gmail.com','Avulso'],
-  ];
-  clientesSeed.forEach((c,i)=>{
-    CLIENTS.push({id:uid('client'),nome:c[0],cpf:c[1],telefone:c[2],email:c[3],plano:c[4],desde:offsetDate(-(30+i*11))});
-  });
-
-  const vehSeed = [
-    ['PGT4E12','Volkswagen','Polo','Prata','Carro','Médio',2022, CLIENTS[0].id],
-    ['BRC9910','Fiat','Toro','Cinza','SUV/Caminhonete','Grande',2021, CLIENTS[0].id],
-    ['QWE2A45','Honda','CG 160','Vermelha','Moto','Pequeno',2023, CLIENTS[1].id],
-    ['RST7788','Toyota','Corolla','Preto','Carro','Médio',2020, null],
-    ['LMX3C09','Renault','Master','Branca','Utilitário/Van','Grande',2019, CLIENTS[2].id],
-    ['ABC1D23','Chevrolet','Onix','Branco','Carro','Médio',2023, CLIENTS[3].id],
-    ['ZYX8899','Yamaha','Fazer 250','Azul','Moto','Pequeno',2022, null],
-    ['JJK5566','Jeep','Compass','Preto','SUV/Caminhonete','Grande',2022, CLIENTS[4].id],
-    ['MNB4321','Volvo','FH 540','Vermelho','Caminhão','Grande',2018, CLIENTS[5].id],
-    ['CVB6677','Hyundai','HB20','Prata','Carro','Pequeno',2021, CLIENTS[6].id],
-    ['TYU2244','Fiat','Strada','Branca','SUV/Caminhonete','Médio',2020, null],
-    ['OIU9911','Honda','Civic','Cinza','Carro','Médio',2023, null],
-  ];
-  vehSeed.forEach(v=>{
-    VEHICLES.push({id:uid('vehicle'),placa:v[0],marca:v[1],modelo:v[2],cor:v[3],tipo:v[4],porte:v[5],ano:v[6],clienteId:v[7]});
-  });
-
-  // histórico (últimos 7 dias) finalizados
-  for(let d=6; d>=1; d--){
-    const count = 3 + Math.floor(Math.random()*4);
-    for(let i=0;i<count;i++){
-      const veh = VEHICLES[Math.floor(Math.random()*VEHICLES.length)];
-      const entrada = offsetDate(-d, 8+Math.floor(Math.random()*9));
-      const minutos = 25 + Math.floor(Math.random()*400);
-      const saida = new Date(entrada.getTime()+minutos*60000);
-      const cobranca = clienteCobrancaPadrao(veh.clienteId);
-      const valor = calcularValor(entrada, saida, cobranca);
-      MOVES.push({id:uid('move'),placa:veh.placa,veiculoId:veh.id,vagaId:null,entrada,saida,cobranca,valor,status:'finalizado'});
-    }
-  }
-
-  // ativos agora — ocupar algumas vagas compatíveis
-  const ativarPlacas = ['PGT4E12','QWE2A45','ABC1D23','MNB4321','JJK5566','ZYX8899','TYU2244'];
-  ativarPlacas.forEach(pl=>{
-    const veh = VEHICLES.find(v=>v.placa===pl);
-    const vaga = pickFreeSpotFor(veh.tipo);
-    if(!vaga) return;
-    vaga.status='ocupado';
-    const entrada = offsetDate(0, -(1+Math.random()*4));
-    const cobranca = clienteCobrancaPadrao(veh.clienteId);
-    MOVES.push({id:uid('move'),placa:veh.placa,veiculoId:veh.id,vagaId:vaga.id,entrada,saida:null,cobranca,valor:0,status:'ativo'});
-  });
 }
 
 function offsetDate(days, hourFloat){
@@ -951,7 +891,7 @@ function renderDashboard(){
   const entradasHoje = MOVES.filter(m=>m.entrada.toDateString()===hojeStr).length;
 
   document.getElementById('kpiRow').innerHTML = `
-    ${kpi('occ','Ocupação atual', Math.round(ocupadas/total*100)+'%', `${ocupadas} de ${total} vagas ocupadas`,'')}
+    ${kpi('occ','Ocupação atual', total? Math.round(ocupadas/total*100)+'%' : '0%', `${ocupadas} de ${total} vagas ocupadas`,'')}
     ${kpi('free','Vagas livres', livres, `${manut} em manutenção`,'')}
     ${kpi('revenue','Faturamento hoje', fmtMoney(faturamentoHoje), 'movimentações encerradas','up')}
     ${kpi('swap','Entradas hoje', entradasHoje, 'veículos registrados','')}
@@ -1548,7 +1488,7 @@ function renderRelatorios(){
   const receitaTotal = finalizados.reduce((a,m)=>a+m.valor,0);
   const ticketMedio = finalizados.length ? receitaTotal/finalizados.length : 0;
   const duracaoMedia = finalizados.length ? finalizados.reduce((a,m)=>a+(m.saida-m.entrada)/60000,0)/finalizados.length : 0;
-  const ocupAtual = Math.round(SPOTS.filter(s=>s.status==='ocupado').length/SPOTS.length*100);
+  const ocupAtual = SPOTS.length ? Math.round(SPOTS.filter(s=>s.status==='ocupado').length/SPOTS.length*100) : 0;
 
   document.getElementById('repKpis').innerHTML = `
     ${kpi('revenue','Receita (histórico)', fmtMoney(receitaTotal), finalizados.length+' movimentações encerradas','')}
@@ -1584,7 +1524,7 @@ function renderRelatorios(){
   document.getElementById('repSectors').innerHTML = setores.map(s=>{
     const items = SPOTS.filter(sp=>sp.setor===s.key);
     const occ = items.filter(sp=>sp.status==='ocupado').length;
-    const pct = Math.round(occ/items.length*100);
+    const pct = items.length ? Math.round(occ/items.length*100) : 0;
     return `<div class="hbar-row">
       <div class="hbar-label">${s.label}</div>
       <div class="hbar-track"><div class="hbar-fill" style="width:${pct}%;background:var(--line);"></div></div>
